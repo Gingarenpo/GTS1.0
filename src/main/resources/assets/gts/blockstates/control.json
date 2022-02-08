@@ -1,0 +1,19 @@
+{
+	"variants": {
+		"normal": {
+			"model": "gts:control"
+		},
+		"facing=west": {
+			"model": "gts:control"
+		},
+		"facing=east": {
+			"model": "gts:control"
+		},
+		"facing=north": {
+			"model": "gts:control"
+		},
+		"facing=south": {
+			"model": "gts:control"
+		}
+	}
+}

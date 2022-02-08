@@ -1,0 +1,18 @@
+[
+  {
+    "modid": "GTS",
+    "name": "GTS - Ginren Traffic System",
+    "description": "A mod that adds some Traffic Management System.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "https://ginren.info/G-Factory",
+    "updateUrl": "",
+    "authorList": [
+      "Gingarenpo"
+    ],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]
