@@ -112,24 +112,59 @@ HashMapのキーは、自由に設定することができる**String**型の文
 **TrafficController**あるいは**TileEntityTrafficController**のクラスインスタンスが入ることを予定している（どちらを入れるかは未定）。恐らく後者が入る（座標などの追加情報も付与されるが反面撤去された場合につじつまが合わなくなる）
 
 ## モデルコンフィグについて（ModelConfigクラス）
-このクラスは、基本的にRTMのJSONファイルと同じように、モデルの場所やモデルのテクスチャ、LightObjectsについて格納をするコンフィグファイルである。詳しい仕様はサンプルJSONファイルなどをチェックしてほしい。
-
-### LightObjectsについて
-JSONでは以下のように入れ子になっている。
+交通信号機のモデルのデータを指定するためのものとなる。サンプルとして、DUMMY.json（モデルが何も選択されていないとき代わりに表示する）の中身をここに掲載する。
 
 ```
 {
-    ...,
-    "lightObjects": {
-        "green": ["g300"],
-        "yellow": ["y300"],
-        ...
+  "id": "DUMMY",
+  "model": "models/dummy/dummy_model.mqo",
+  "textures":{
+    "base": "textures/model/dummy/dummy_tl.png",
+    "light": "textures/model/dummy/dummy_tl.png",
+    "nolight": "textures/model/dummy/dummy_tl.png"
+  },
+  "pattern": [
+    {
+      "name": "green",
+      "tick": 0,
+      "objects": [
+        "g300"
+      ]
     },
-    ...
+    {
+      "name": "yellow",
+      "tick": 0,
+      "objects": [
+        "y300"
+      ]
+    },
+    {
+      "name": "red",
+      "tick": 0,
+      "objects": [
+        "r300"
+      ]
+    },
+    {
+      "name": "yellow_flush",
+      "tick": 10,
+      "objects": [
+        "y300"
+      ]
+    },
+    {
+      "name": "red_flush",
+      "tick": 10,
+      "objects": [
+        "r300"
+      ]
+    }
+  ],
+  "showBoth": true,
+  "size": 1.5
 }
 ```
 
-このオブジェクトは、キー名をLightObjectsの名称とし、その中に配列を1つ保持している（Java側ではArrayListとして保管し、中身のデータ型はStringとする）。このデータはMQOオブジェクトにおいてそのLightObjectsの際に光らせるべきオブジェクト名称を入れる。そうすることで、フェーズでこれを指定する項目があり、そのフェーズになった際にこのLightObjectsをもとにして信号機の現示を変更することになる。
+各項目について以下に記す。
 
-## その他
-まだ仕様がきちんと定まっていないため、頻繁に改訂するかもしれない。
+
