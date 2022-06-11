@@ -1,7 +1,6 @@
 package jp.gingarenpo.gts.core;
 
 import jp.gingarenpo.gts.GTS;
-import jp.gingarenpo.gts.controller.TrafficController;
 import net.minecraft.entity.player.EntityPlayer;
 
 import javax.swing.*;

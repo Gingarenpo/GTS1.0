@@ -1,3 +1,7 @@
+def getTimestamp() {
+    return new Date().format("yyyyMMdd")
+}
+
 buildscript {
     repositories {
         // These repositories are only for Gradle plugins, put any other repositories in the repository block further below
@@ -19,7 +23,9 @@ sourceSets {
 }
 
 group = 'Gingarenpo'
-version = '0.1'
+version = '1.0' + "-" + getTimestamp()
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
 
 java {
     archivesBaseName = 'GTS'
@@ -130,7 +136,8 @@ dependencies {
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    manifest {
+
+    /*manifest {
         attributes([
                 "Specification-Title"     : "gts",
                 "Specification-Vendor"    : "Gingarenpo",
@@ -140,7 +147,7 @@ jar {
                 "Implementation-Vendor"   : "Gingarenpo",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
-    }
+    }*/
 }
 
 jar.finalizedBy('reobfJar')

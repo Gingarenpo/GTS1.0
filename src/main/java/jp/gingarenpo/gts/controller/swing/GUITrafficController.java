@@ -2,17 +2,11 @@ package jp.gingarenpo.gts.controller.swing;
 
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.controller.TileEntityTrafficController;
-import jp.gingarenpo.gts.controller.TrafficController;
 import jp.gingarenpo.gts.core.GTSSwingGUIBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Swingで交通信号制御機についてのGUIを表示させるためのパネル。
@@ -86,7 +80,7 @@ public class GUITrafficController extends GTSSwingGUIBase<TileEntityTrafficContr
 		done.addActionListener(e -> {
 			TileEntityTrafficController data = GUITrafficController.this.data;
 			// まず値の更新
-			data.getData().setId(nameField.getText());
+			data.getData().setName(nameField.getText());
 			// ボタンが押されたらGUIを閉じて次回パケット更新を待つ
 			data.createTexture(true);
 			GUITrafficController.this.onClose();
@@ -140,7 +134,7 @@ public class GUITrafficController extends GTSSwingGUIBase<TileEntityTrafficContr
 		colorChoice.setText(String.format("Color: RGB(%d, %d, %d)", c.getRed(), c.getGreen(), c.getBlue()));
 		
 		// 名前の反映
-		nameField.setText(data.getData().getId());
+		nameField.setText(data.getData().getName());
 		this.revalidate(); // 再レイアウト
 	}
 	

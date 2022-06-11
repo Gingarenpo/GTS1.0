@@ -1,218 +1,243 @@
 package jp.gingarenpo.gts.controller;
 
+import jp.gingarenpo.gts.GTS;
+import jp.gingarenpo.gts.controller.cycle.Cycle;
+import net.minecraft.world.World;
 
 import java.awt.*;
-import java.io.Serializable;
-import java.util.ArrayList;
+import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * 制御機が保持するべきデータを集めたもの。
- * クラスとして作成することで、サーバークライアント間の同期をしやすくする目的がある。
- * シリアライズ可能。
+ * 交通信号制御機のデータを保持するクラス。シリアライズ可能だが行わない。
+ * 基本的に1つの制御機は1つのサイクルを実行するものとするが、夜間点滅やプログラム多段制御などを実現するために
+ * 仕組みとしては複数のサイクル登録を取り入れている。
+ * このインスタンスが登録されている場合に、サイクル終了後このインスタンスを経由してサイクルの継続条件判定などを行う。
+ * このインスタンス自体は処理を直接実行することはないためTickableは実装していないが、外部から呼び出しを受けたときの為の
+ * メソッド自体は用意してある。
  */
-public class TrafficController implements Serializable {
-
-	private ArrayList<Cycle> statuses = new ArrayList<Cycle>(); // 別途作成するクラスにて、ステータスを管理する（制御機の現示と時間をまとめている）
-	private String id = ""; // ワールド内で被らない、制御機固有のIDを指定する。警察署番号とか管理番号に相当する。入るのは英数字のみ！
-	private Color color = Color.WHITE; // デフォルトは白。制御機の色。DynamicTextureで使用する。
-	private boolean active = false; // この制御機が動くかどうか。動かさない場合はfalseにすることでとりあえずリソース節約可能
-	private int phase = 0; // サイクルのステータスで現在表示すべきもの。
-	private boolean detected = false; // この制御機に対して感知機能が働いているかどうか。
-	private long tick = 0; // サイクルフェーズが切り替わってからの経過秒数。
-	
-	public TrafficController() {
-		// empty
-	}
-	
-	public TrafficController(String id) {
-		this(); // 将来予約用
-		this.id = id; // IDを代入
-	}
-	
-	public TrafficController(String id, Color color) {
-		// 全部指定する場合
-		this(id);
-		this.color = color;
-	}
+public class TrafficController {
 	
 	/**
-	 * 現在登録されているステータスを返す。
-	 * @return
+	 * この制御機に登録されているサイクルを格納する。キーはサイクル名とし、ハッシュマップで格納する。順番は問わない（つもり）。
 	 */
-	public ArrayList<Cycle> getStatuses() {
-		return statuses;
+	private HashMap<String, Cycle> cycles = new HashMap<String, Cycle>();
+	
+	/**
+	 * 制御機自体の固有の名称。日本語OK
+	 */
+	private String name;
+	
+	/**
+	 * 制御機のベース色を指定する。指定するColorクラスはAWTのColorクラス。BufferedTextureで作成するために使用させる。
+	 * デフォルトは真っ白。
+	 */
+	private Color color = Color.WHITE;
+	
+	/**
+	 * 制御機のテクスチャを保持しておく場所。このインスタンス自体ではGetterとSetterしか提供せず、
+	 * Render側でこの入れ物を適宜使用していくことにする。
+	 */
+	private BufferedImage texture;
+	
+	/**
+	 * 検知信号を受信したかどうかを格納する変数。感知器や押ボタン箱の動作によってこの値が変化する。
+	 * サイクルを開始する条件の一つとして利用される。
+	 */
+	private boolean detected = false; // 初期値はfalse
+	
+	/**
+	 * 検知ティック。検知信号がtrueになった瞬間を0とし、そこからの経過Tickを格納する。longとする。
+	 */
+	private long detectedTick = 0;
+	
+	/**
+	 * あるサイクルが動作を開始した際を0とし、そこからの経過Tickを格納する。基本的にスピリットとオフセットを決めるために使用する。
+	 */
+	private long ticks = 0;
+	
+	/**
+	 * 現在起動しているサイクルの名前が入る。サイクルが何一つ起動していない場合はnullが格納される。
+	 * 内部で使用しているだけなのでこの中身を取得するGetterなどは存在しない。
+	 */
+	private String now;
+	
+	
+	/**
+	 * 交通信号制御機を初期化する。名前が必須案件だが省略して生成するとランダムで64文字のIDが渡される。適宜変更すること。
+	 * なお日付と一緒に格納してある為天文学的な確率に引っかからない限りユニークな文字列となるはず。
+	 */
+	public TrafficController() {
 	}
 	
 	/**
-	 * 現在の表示サイクルを返す。サイクルが存在しない場合はnullを返す。
-	 * @return
+	 * 指定したIDで交通信号制御機を初期化する。デフォルトはこちら。
+	 * @param name 制御機の名前。
+	 */
+	public TrafficController(String name) {
+		this.name = name;
+	}
+	
+	/**
+	 * サイクルのすべてを取得する。通常使用しない。
+	 * @return サイクルすべてが格納されたHashMap
+	 */
+	public HashMap<String, Cycle> getCycles() {
+		return cycles;
+	}
+	
+	/**
+	 * サイクルを一括登録する。通常使用しない。
+	 * @param cycles 登録したいサイクル。
+	 */
+	public void setCycles(HashMap<String, Cycle> cycles) {
+		this.cycles = cycles;
+	}
+	
+	/**
+	 * 現在起動しているサイクルの情報を返す。
+	 * 起動していない場合はnullが返る。
+	 * @return サイクル
 	 */
 	public Cycle getNowCycle() {
-		if (statuses.size() == 0) return null; // サイクルが存在しない場合はnull
-		return statuses.get(phase);
+		if (this.now == null) return null;
+		return this.cycles.get(now);
 	}
 	
 	/**
-	 * ステータスを一気に更新する。一括で切り替える場合に使おう。
-	 * @param statuses
+	 * 制御機の名前を取得する。
+	 * @return 名前
 	 */
-	public void setStatuses(ArrayList<Cycle> statuses) {
-		this.statuses = statuses;
+	public String getName() {
+		return name;
 	}
 	
 	/**
-	 * IDを返す。
-	 * @return
+	 * 制御機の名前を指定する。
+	 * @param name 名前
 	 */
-	public String getId() {
-		return id;
+	public void setName(String name) {
+		this.name = name;
 	}
 	
 	/**
-	 * IDを指定する。ただし英数字のみ受け付け。それ以外の場合は例外が発生する。
-	 * @return
-	 */
-	public void setId(String id) {
-		this.id = id;
-	}
-	
-	/**
-	 * この制御機が現在アクティブかどうかを返す。
-	 * @return
-	 */
-	public boolean isActive() {
-		return active;
-	}
-	
-	/**
-	 * この制御機のアクティブ状態を設定する。夜間点滅も一つのアクティブなので注意！
-	 */
-	public void setActive(boolean active) {
-		this.active = active;
-	}
-	
-	/**
-	 * 感知信号が受信されているかどうか、返す。
-	 * @return
-	 */
-	public boolean isDetected() {
-		return this.detected;
-	}
-	
-	/**
-	 * 感知状態を切り替える。通常はオンにするだけだろうけど。
-	 * @param detected
-	 */
-	public void setDetected(boolean detected) {
-		this.detected = detected;
-	}
-	
-	/**
-	 * この制御機の色を返す。
-	 * @return
+	 * 制御機の色を取得する。
+	 * @return 色
 	 */
 	public Color getColor() {
 		return color;
 	}
 	
 	/**
-	 * この制御機の色を設定する。ただし、自動でテクスチャを更新はしないので手動で再生成しないと変更は反映されない。
-	 * @param color
+	 * 制御機の色を指定する。
+	 * @param color 色
 	 */
 	public void setColor(Color color) {
 		this.color = color;
 	}
 	
 	/**
-	 * 現在のサイクル状態番号を返す。これ単体で使うことはあまりないと思うが一応。
-	 * @return
+	 * 制御機のテクスチャを取得する。
+	 * @return テクスチャ。Nullが返ってくる場合あり
 	 */
-	public int getPhase() {
-		return phase;
+	public BufferedImage getTexture() {
+		return texture;
 	}
 	
 	/**
-	 * 指定したphaseに強制セットする。
-	 * @deprecated このメソッドはあまり役に立ちません。通常は「nextPhase」もしくは「resetPhase」を使うべきです。
-	 * @param phase
+	 * 制御機のテクスチャを指定する。
+	 * @param texture テクスチャ
 	 */
-	public void setPhase(int phase) {
-		if (statuses.size() <= phase) {
-			throw new IllegalArgumentException("Phase Out of bound");
-		}
-		this.phase = phase;
+	public void setTexture(BufferedImage texture) {
+		this.texture = texture;
 	}
 	
 	/**
-	 * サイクルを1段階進める。もし最後のサイクルの場合は、最初のサイクルに戻る。
+	 * 検知信号を受信しているかどうかを返す。
+	 * @return 受信していればtrue、していなければfalse
 	 */
-	public void nextPhase() {
-		if (phase == statuses.size()-1) {
-			// 既に最後のサイクルである場合は
-			this.phase = 0;
-		}
-		else {
-			// 最後ではないので
-			this.phase++;
-		}
-		this.tick = 0;
+	public boolean isDetected() {
+		return detected;
 	}
 	
 	/**
-	 * 強制的にサイクルを最初からやり直す。
+	 * 検知信号の状態を強制的に変化させる。
+	 * 主に押ボタン箱などが使用するためのメソッド。
+	 * @param detected 検知信号状態。
 	 */
-	public void resetPhase() {
-		this.phase = 0;
-		this.tick = 0;
+	public void setDetected(boolean detected) {
+		this.detected = detected;
 	}
 	
 	/**
-	 * 現在のサイクルが開始してからのTick数を取得する。
-	 * @return
+	 * 検知信号受信後のTick経過数を取得する。検知信号を受信していない場合は常に0が返る。
+	 * @return 検知Tick経過数
 	 */
-	public long getTick() {
-		return this.tick;
+	public long getDetectedTick() {
+		return detectedTick;
 	}
 	
 	/**
-	 * Tickを指定したものに変更する。特例として、マイナスを指定すると通常より若干延長することができる。
-	 * @param tick
+	 * 検知信号Tickを強制的に変更する。サイクルバランスが乱れる恐れがある為通常使用は禁止。
+	 * @param detectedTick 負の数を指定すると例外を出す
 	 */
-	public void setTick(long tick) {
-		this.tick = tick;
+	public void setDetectedTick(long detectedTick) throws IllegalArgumentException {
+		if (detectedTick < 0) throw new IllegalArgumentException("DetectTick must be greater than 0.");
+		this.detectedTick = detectedTick;
 	}
 	
 	/**
-	 * サイクルの調整、パラメーターの初期化などを全部自動でやってくれる優れもの。
-	 * 1Tick毎に呼び出すことで、setterなどを呼ばなくても一連の処理を全てやってくれる。
-	 * 通常はこちらを呼び出すべき。TileEntityなどで呼び出そう。
+	 * サイクル開始後のTicksを取得する。
+	 * @return Ticks
+	 */
+	public long getTicks() {
+		return ticks;
+	}
+	
+	/**
+	 * Tickを強制的に変更する。サイクルバランスが乱れる恐れがある為通常使用は禁止。
+	 * @param ticks 負の数を指定すると例外を出す
+	 */
+	public void setTicks(long ticks) throws IllegalArgumentException {
+		if (detectedTick < 0) throw new IllegalArgumentException("DetectTick must be greater than 0.");
+		this.ticks = ticks;
+	}
+	
+	/**
+	 * 外部から呼び出されることを前提としている。Tickableを実装したクラス（デフォルトではTileEntity）から呼び出されることを想定。
+	 * 外部からWorldインスタンスを受け取り、サイクルの起動チェックと終了チェックを行う。戻り値は現在指定していないが将来的に
+	 * 変更される可能性もある。
 	 *
-	 * なお、現示の反映に関してはデータの呼び出しもとに責任がある！
+	 * @param world この制御機が設置されているワールドのインスタンス。
 	 */
-	public void onUpdateTick() {
-		// 上記メソッドを実行していく
-		this.tick++; // tickに1秒足す
-		// 現在のサイクルを取得する
-		Cycle cycle = this.getNowCycle(); // 現在のサイクルを取得する
-		if (cycle == null) return; // そもそもサイクルが存在しない
-		// このサイクルが終了しているか確認する
-		if (cycle.isFinished(this)) {
-			// 終了していたら
-			this.nextPhase(); // 次のフェーズへ移行
+	public void checkCycle(World world) {
+		if (now != null) {
+			// 現在サイクルが起動している場合、まず終了条件を確かめる
+			if (!getNowCycle().nextOrResetPhase(this, world)) {
+				// サイクルを終了できない場合（まだこのサイクルが起動中である場合）
+				GTS.GTSLog.debug("Cycle " + now + " is need to continue.");
+				return; // 処理を中止する
+			}
+			// サイクルの終了が確認でき、上記メソッドでサイクルのリセットを行ったため起動サイクル状態を初期化
+			now = null;
 		}
+		
+		// 起動条件を確かめる（HashMapで順繰りにイテレータを回す
+		for (Map.Entry<String, Cycle> cycle: cycles.entrySet()) {
+			if (cycle.getValue().canStart(world, this, this.detected)) {
+				// サイクルの起動可能な場合はサイクルを起動する
+				now = cycle.getKey();
+				GTS.GTSLog.debug("Cycle " + now + " is now started.");
+				break;
+			}
+		}
+		
+		// 起動条件に一致したサイクルが存在しない場合はnowはnullのままとなり起動せずに次回持越し
+		if (now == null) GTS.GTSLog.debug("No cycle can be ready.");
+		return;
 	}
 	
-	/**
-	 * このクラスの文字列表現を返す。
-	 * @return
-	 */
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("[TrafficController:" + id + "] ");
-		sb.append("color = " + color.toString());
-		sb.append(" tick = " + tick);
-		sb.append(" detected = " + detected);
-		return sb.toString();
-	}
+	
+
 }

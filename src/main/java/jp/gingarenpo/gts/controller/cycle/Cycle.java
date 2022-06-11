@@ -173,32 +173,41 @@ public class Cycle {
 	
 	/**
 	 * フェーズを次のものに移行させる。ラストだった場合はこのメソッドは何もしない。
-	 * ラストの場合にリセットしたい場合は別メソッドを使う。
+	 * ラストの場合にリセットしたい場合は別メソッドを使う。ただし継続要求をされている場合はfalseを返し変更を行わない。
 	 */
-	public void nextPhase() {
-		if (!isLast()) nowPhase++;
+	public boolean nextPhase(TrafficController controller, World world) {
+		if (getNowPhase().shouldContinue(controller, controller.getTicks(), controller.isDetected(), world)) return false;
+		if (!isLast()) {
+			nowPhase++;
+			return true;
+		}
+		return false;
 	}
 	
 	/**
 	 * サイクル終了時に呼び出されることを想定している。フェーズを一番最初にリセットする。
-	 * どんな状態でも一番最初に戻される。
+	 * どんな状態でも一番最初に戻される。ただし継続要求をされている場合はfalseを返し変更を行わない。
 	 */
-	public void resetPhase() {
+	public boolean resetPhase(TrafficController controller, World world) {
+		if (getNowPhase().shouldContinue(controller, controller.getTicks(), controller.isDetected(), world)) return false;
 		nowPhase = 0;
+		return true;
 	}
 	
 	/**
 	 * フェーズを次のものに移行させる。ラストだった場合は自動的にリセットする。
-	 * ラストだった場合はfalseを返し、それ以外の場合はtrueを返す。
+	 * フェーズがまだ継続を要求している場合は変更を行わず、falseを返す。
+	 * フェーズの変更に成功するとtrueを返す。
+	 *
+	 * @param controller 制御機のインスタンス
+	 * @param world ワールドインスタンス
 	 * @return 上記参照
 	 */
-	public boolean nextOrResetPhase() {
+	public boolean nextOrResetPhase(TrafficController controller, World world) {
 		if (isLast()) {
-			resetPhase();
-			return false;
+			return resetPhase(controller, world);
 		}
-		nextPhase();
-		return true;
+		return nextPhase(controller, world);
 	}
 	
 	

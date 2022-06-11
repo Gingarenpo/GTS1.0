@@ -4,7 +4,6 @@ import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.controller.BlockTrafficController;
 import jp.gingarenpo.gts.controller.TileEntityTrafficController;
-import jp.gingarenpo.gts.controller.TrafficController;
 import jp.gingarenpo.gts.data.DummyConfig;
 import jp.gingarenpo.gts.data.Model;
 import jp.gingarenpo.gts.core.GTSTileEntity;

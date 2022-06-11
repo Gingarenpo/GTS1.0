@@ -62,7 +62,8 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 	 */
 	@Override
 	public void update() {
-		data.onUpdateTick(); // 制御機のデータを更新する
+		if (this.world.isRemote) return; // クライアント側では実行しない
+		data.checkCycle(this.world); // 制御機のデータを更新する
 	}
 	
 	/**

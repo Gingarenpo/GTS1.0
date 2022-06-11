@@ -1,9 +1,7 @@
 package jp.gingarenpo.gts.light;
 
-import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gingacore.mqo.MQOFace;
 import jp.gingarenpo.gingacore.mqo.MQOObject;
-import jp.gingarenpo.gts.controller.Cycle;
 import jp.gingarenpo.gts.data.ConfigBase;
 import jp.gingarenpo.gts.data.Model;
 import net.minecraft.client.Minecraft;
@@ -14,7 +12,6 @@ import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
-import java.util.ArrayList;
 import java.util.Objects;
 
 /**
@@ -65,7 +62,7 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		if (te.getData() != null && te.getData().getParent() != null && te.getData().getParent().getNowCycle() != null) {
 			// 制御機の情報がまだ入っていない場合や入っていてもサイクルが設定されていない場合はとりあえず何もしない
 			// つまりここに来たら必ずサイクルがあり、今光っているものがあるはず
-			lightObject = te.getData().getParent().getNowCycle().getChannels().get(te.getData().getSignal());
+			lightObject = te.getData().getParent().getNowCycle().getNowPhase().getChannel(te.getData().getSignal());
 		}
 		
 		

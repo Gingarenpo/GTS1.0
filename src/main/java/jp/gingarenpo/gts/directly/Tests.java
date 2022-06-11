@@ -2,13 +2,10 @@ package jp.gingarenpo.gts.directly;
 
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.controller.TileEntityTrafficController;
-import jp.gingarenpo.gts.controller.TrafficController;
 import jp.gingarenpo.gts.controller.swing.GUITrafficController;
-import net.minecraft.tileentity.TileEntity;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Arrays;
 
 /**
  * 注意：開発用のテストクラスなので通常使用しないこと。
