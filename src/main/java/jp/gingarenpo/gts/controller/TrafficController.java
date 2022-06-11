@@ -6,18 +6,19 @@ import net.minecraft.world.World;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 交通信号制御機のデータを保持するクラス。シリアライズ可能だが行わない。
+ * 交通信号制御機のデータを保持するクラス。シリアライズ可能。
  * 基本的に1つの制御機は1つのサイクルを実行するものとするが、夜間点滅やプログラム多段制御などを実現するために
  * 仕組みとしては複数のサイクル登録を取り入れている。
  * このインスタンスが登録されている場合に、サイクル終了後このインスタンスを経由してサイクルの継続条件判定などを行う。
  * このインスタンス自体は処理を直接実行することはないためTickableは実装していないが、外部から呼び出しを受けたときの為の
  * メソッド自体は用意してある。
  */
-public class TrafficController {
+public class TrafficController implements Serializable {
 	
 	/**
 	 * この制御機に登録されているサイクルを格納する。キーはサイクル名とし、ハッシュマップで格納する。順番は問わない（つもり）。

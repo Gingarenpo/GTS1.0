@@ -1,7 +1,8 @@
 {
 	"credit": "Made with Blockbench",
 	"textures": {
-		"0": "gts:blocks/control"
+		"0": "gts:blocks/control",
+		"particle": "gts:blocks/control"
 	},
 	"elements": [
 		{

@@ -16,6 +16,8 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.event.RegistryEvent;
@@ -55,7 +57,7 @@ public class GTS {
 	
 	public static final String MOD_ID = "gts"; // 単にMODのID
 	public static final String MOD_NAME = "GTS - Ginren Traffic System"; // わかりやすいModの名前
-	public static final String VERSION = "0.1"; // バージョン
+	public static final String VERSION = "1.0"; // バージョン
 	public static final SimpleNetworkWrapper MOD_NETWORK = NetworkRegistry.INSTANCE.newSimpleChannel(MOD_ID); // パケット通信に使用するチャンネル
 	public static File GTSModDir; // GTSのデータを格納するディレクトリ
 	
@@ -137,7 +139,6 @@ public class GTS {
 		loader.load(GTSModDir); // 検索をかける
 		
 		// プロキシ処理
-		proxy.registerItemModels();
 		proxy.registerTESRs();
 		
 		// TileEntityの登録（非推奨になっているけどこれで登録できるので）
@@ -177,8 +178,8 @@ public class GTS {
 	 */
 	@GameRegistry.ObjectHolder(MOD_ID)
 	public static class Blocks {
-		public static final BlockTrafficController control = new BlockTrafficController(); // 制御機
-		public static final BlockTrafficLight light = new BlockTrafficLight(); // 信号機
+		public static final Block control = null; // 制御機
+		public static final Block light = null; // 信号機
 	}
 	
 	/**
@@ -189,8 +190,8 @@ public class GTS {
 	 */
 	@GameRegistry.ObjectHolder(MOD_ID)
 	public static class Items {
-      	public static final ItemBlock control = (ItemBlock) new ItemBlock(Blocks.control).setRegistryName("control"); // 制御機のドロップ扱い
-		public static final ItemBlock light = (ItemBlock) new ItemBlock(Blocks.light).setRegistryName("light"); // 信号機のドロップ扱い
+      	public static final ItemBlock control = (ItemBlock) new ItemBlock(Blocks.control).setRegistryName(Blocks.control.getRegistryName()); // 制御機のドロップ扱い
+		public static final ItemBlock light = (ItemBlock) new ItemBlock(Blocks.light).setRegistryName(Blocks.light.getRegistryName()); // 信号機のドロップ扱い
 	}
 	
 	/**
@@ -198,14 +199,17 @@ public class GTS {
 	 *
 	 * これは特別なクラス。登録イベントを直接呼び出す。カスタムアイテムを登録するときなどに利用する。
 	 */
-	@Mod.EventBusSubscriber
+	@Mod.EventBusSubscriber(modid = MOD_ID)
 	public static class ObjectRegistryHandler {
 		/**
 		 * Listen for the register event for creating custom items
 		 */
 		@SubscribeEvent
 		public static void addItems(RegistryEvent.Register<Item> event) {
-			event.getRegistry().registerAll(Items.control, Items.light);
+			event.getRegistry().registerAll(
+					new ItemBlock(Blocks.control).setRegistryName(Blocks.control.getRegistryName()),
+					new ItemBlock(Blocks.light).setRegistryName(Blocks.light.getRegistryName())
+			);
 		}
 		
 		/**
@@ -213,7 +217,20 @@ public class GTS {
 		 */
 		@SubscribeEvent
 		public static void addBlocks(RegistryEvent.Register<Block> event) {
-			event.getRegistry().registerAll(Blocks.control, Blocks.light); // ブロックを実際に登録
+			event.getRegistry().registerAll(
+					new BlockTrafficLight(),
+					new BlockTrafficController()
+			); // ブロックを実際に登録
+		}
+		
+		/**
+		 * モデルの登録を行うためのイベントを発火する場所。
+		 * ここで登録しないと間に合わずぬるぽが発生する
+		 * @param event
+		 */
+		@SubscribeEvent
+		public static void addModels(ModelRegistryEvent event) {
+			proxy.registerItemModels(); // ここでモデルの登録を行わないといけない
 		}
 		
 	}

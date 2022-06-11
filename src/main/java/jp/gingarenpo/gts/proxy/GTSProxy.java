@@ -6,6 +6,7 @@ import jp.gingarenpo.gts.controller.TileEntityTrafficController;
 import jp.gingarenpo.gts.light.RendererTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import net.minecraft.item.Item;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
 
@@ -20,8 +21,8 @@ public class GTSProxy {
 	 * アイテムのモデルレンダーを登録する
 	 */
 	public void registerItemModels() {
-		setCustomModelResourceLocation(GTS.Items.control, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(GTS.MOD_ID + ":control", "inventory"));
-		setCustomModelResourceLocation(GTS.Items.light, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(GTS.MOD_ID + ":light", "inventory"));
+		setCustomModelResourceLocation(GTS.Items.control, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "control"), "inventory"));
+		setCustomModelResourceLocation(GTS.Items.light, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "light"), "inventory"));
 		
 	}
 	
