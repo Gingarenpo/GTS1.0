@@ -5,6 +5,7 @@ import jp.gingarenpo.gts.data.ConfigBase;
 import jp.gingarenpo.gts.exception.DataExistException;
 import net.minecraft.world.World;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
 /**
@@ -16,7 +17,7 @@ import java.util.HashMap;
  * 継続条件を主に変えることになる。
  * ※PhaseBaseというクラスがあるがこちらは組み込みクラスでありこのクラスを継承することはあまりお勧めしない
  */
-public abstract class Phase {
+public abstract class Phase implements Serializable {
 	
 	/**
 	 * このフェーズの名称。
@@ -27,12 +28,12 @@ public abstract class Phase {
 	 * 各チャンネル毎にどの信号を光らせるかを指定するハッシュマップ。
 	 * チャンネル番号は1から指定可能。それ以外は登録不可。ArrayListだとlong使えないみたいなので
 	 */
-	protected HashMap<Long, ConfigBase.LightObject> channels;
+	protected HashMap<Long, ConfigBase.LightObject> channels = new HashMap<Long, ConfigBase.LightObject>();
 	
 	/**
 	 * このフェーズが開始してからの総Tick数を保持する。
 	 */
-	protected long ticks;
+	protected long ticks = 0;
 	
 	/**
 	 * 指定した名称でフェーズを作成する。
@@ -65,9 +66,10 @@ public abstract class Phase {
 	 * @param lo 指定したい信号色の状態。
 	 * @throws IllegalArgumentException 番号が0以下の場合
 	 */
-	public void addChannel(long key, ConfigBase.LightObject lo) throws IllegalArgumentException {
+	public Phase addChannel(long key, ConfigBase.LightObject lo) throws IllegalArgumentException {
 		if (key <= 0) throw new IllegalArgumentException("Key must be greater than 0");
 		this.channels.put(key, lo);
+		return this;
 	}
 	
 	/**
@@ -77,9 +79,10 @@ public abstract class Phase {
 	 * @throws IllegalArgumentException 番号が0以下の場合
 	 * @throws DataExistException 指定したチャンネルに既に値が入っている場合
 	 */
-	public void addChannelTry(long key, ConfigBase.LightObject lo) throws IllegalArgumentException, DataExistException {
+	public Phase addChannelTry(long key, ConfigBase.LightObject lo) throws IllegalArgumentException, DataExistException {
 		if (channels.containsKey(key)) throw new DataExistException("Key" + key + " exist");
-		this.addChannel(key, lo);
+		return this.addChannel(key, lo);
+		
 	}
 	
 	/**
@@ -98,10 +101,33 @@ public abstract class Phase {
 	 * @param after コピー先番号。存在する場合は上書きされる。
 	 * @throws IllegalArgumentException キーが0以下だったりコピー元が存在しない場合
 	 */
-	public void copyChannel(long before, long after) throws IllegalArgumentException {
+	public Phase copyChannel(long before, long after) throws IllegalArgumentException {
 		if (before <= 0 || after <= 0) throw new IllegalArgumentException("Key must be greater than 0");
 		if (!channels.containsKey(before)) throw new IllegalArgumentException("Key" + before + "does not exist");
 		channels.put(after, channels.get(before));
+		return this;
+	}
+	
+	/**
+	 * Tickを1個進める。
+	 * @return
+	 */
+	public Phase addTick() {
+		this.ticks++;
+		return this;
+	}
+	
+	/**
+	 * Tickを0に戻す。
+	 * @return
+	 */
+	public Phase resetTick() {
+		this.ticks = 0;
+		return this;
+	}
+	
+	public long getTick() {
+		return this.ticks;
 	}
 	
 	/**

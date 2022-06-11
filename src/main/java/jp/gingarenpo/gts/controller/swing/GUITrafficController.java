@@ -83,6 +83,7 @@ public class GUITrafficController extends GTSSwingGUIBase<TileEntityTrafficContr
 			data.getData().setName(nameField.getText());
 			// ボタンが押されたらGUIを閉じて次回パケット更新を待つ
 			data.createTexture(true);
+			data.markDirty(); // 次回書き込み予約
 			GUITrafficController.this.onClose();
 			// んでクライアント側で更新を通知する
 			data.getWorld().notifyBlockUpdate(data.getPos(), data.getWorld().getBlockState(data.getPos()), data.getWorld().getBlockState(data.getPos()), 2);

@@ -2,13 +2,18 @@ package jp.gingarenpo.gts.controller;
 
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.controller.cycle.Cycle;
+import jp.gingarenpo.gts.controller.phase.Phase;
+import jp.gingarenpo.gts.controller.phase.PhaseBase;
+import jp.gingarenpo.gts.data.ConfigBase;
 import net.minecraft.world.World;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 /**
  * 交通信号制御機のデータを保持するクラス。シリアライズ可能。
@@ -66,10 +71,20 @@ public class TrafficController implements Serializable {
 	
 	
 	/**
-	 * 交通信号制御機を初期化する。名前が必須案件だが省略して生成するとランダムで64文字のIDが渡される。適宜変更すること。
+	 * 交通信号制御機を初期化する。名前が必須案件だが省略して生成するとランダムで32文字のIDが渡される。適宜変更すること。
 	 * なお日付と一緒に格納してある為天文学的な確率に引っかからない限りユニークな文字列となるはず。
 	 */
 	public TrafficController() {
+		this(new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime()) + RandomStringUtils.randomAlphanumeric(24));
+		// TODO:デバッグ用。いずれ消す↓
+		Cycle cycle = new Cycle("default_cycle");
+		ArrayList object = new ArrayList();
+		object.add("g300");
+		cycle.addPhase(new PhaseBase("default", 30).addChannel(1, new ConfigBase.LightObject().setObjects(object)));
+		object = new ArrayList();
+		object.add("y300");
+		cycle.addPhase(new PhaseBase("default2", 30).addChannel(1, new ConfigBase.LightObject().setObjects(object)));
+		cycles.put("default", cycle);
 	}
 	
 	/**
@@ -215,13 +230,17 @@ public class TrafficController implements Serializable {
 	public void checkCycle(World world) {
 		if (now != null) {
 			// 現在サイクルが起動している場合、まず終了条件を確かめる
-			if (!getNowCycle().nextOrResetPhase(this, world)) {
+			if (!getNowCycle().isLast() && !getNowCycle().nextPhase(this, world) || getNowCycle().isLast() && !getNowCycle().resetPhase(this, world)) {
 				// サイクルを終了できない場合（まだこのサイクルが起動中である場合）
-				GTS.GTSLog.debug("Cycle " + now + " is need to continue.");
+				GTS.GTSLog.debug(String.format("<%s> Cycle %s needs to continue. Skipped", name, now));
+				this.ticks++;
+				
 				return; // 処理を中止する
 			}
 			// サイクルの終了が確認でき、上記メソッドでサイクルのリセットを行ったため起動サイクル状態を初期化
+			GTS.GTSLog.debug(String.format("<%s> Cycle %s ended", name, now));
 			now = null;
+			
 		}
 		
 		// 起動条件を確かめる（HashMapで順繰りにイテレータを回す
@@ -229,13 +248,12 @@ public class TrafficController implements Serializable {
 			if (cycle.getValue().canStart(world, this, this.detected)) {
 				// サイクルの起動可能な場合はサイクルを起動する
 				now = cycle.getKey();
-				GTS.GTSLog.debug("Cycle " + now + " is now started.");
+				GTS.GTSLog.debug(String.format("<%s> Cycle %s is now started", name, now));
 				break;
 			}
 		}
 		
 		// 起動条件に一致したサイクルが存在しない場合はnowはnullのままとなり起動せずに次回持越し
-		if (now == null) GTS.GTSLog.debug("No cycle can be ready.");
 		return;
 	}
 	

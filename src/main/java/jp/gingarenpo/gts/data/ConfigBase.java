@@ -172,16 +172,18 @@ public class ConfigBase implements Serializable {
 			return name;
 		}
 		
-		public void setName(String name) {
+		public LightObject setName(String name) {
 			this.name = name;
+			return this;
 		}
 		
 		public ArrayList<String> getObjects() {
 			return objects;
 		}
 		
-		public void setObjects(ArrayList<String> objects) {
+		public LightObject setObjects(ArrayList<String> objects) {
 			this.objects = objects;
+			return this;
 		}
 		
 		public boolean equals(LightObject l) {
@@ -199,6 +201,11 @@ public class ConfigBase implements Serializable {
 		public boolean isNoLight(long tick) {
 			if (this.tick == 0) return false;
 			return Math.floorDiv(tick, this.tick) % 2 == 1; // 点滅は点灯状態から始まり指定したTickの時消灯している場合は結果が奇数となる
+		}
+		
+		@Override
+		public String toString() {
+			return objects.toString();
 		}
 	}
 }

@@ -30,7 +30,7 @@ public class TileEntityTrafficLight extends GTSTileEntity {
 	
 	public TileEntityTrafficLight() {
 		setDummyModel();
-		setData(new TrafficLight(0));
+		setData(new TrafficLight(1));
 	}
 	
 	/**
@@ -42,7 +42,7 @@ public class TileEntityTrafficLight extends GTSTileEntity {
 	 */
 	private void setDummyModel() {
 		try {
-			addon = new Model(new DummyConfig(), new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/test.mqo")).getInputStream()));
+			addon = new Model(new DummyConfig(), new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/dummy/dummy_model.mqo")).getInputStream()));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

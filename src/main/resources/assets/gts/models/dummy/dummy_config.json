@@ -1,0 +1,48 @@
+{
+  "id": "DUMMY",
+  "model": "models/dummy/dummy_model.mqo",
+  "textures":{
+    "base": "textures/model/dummy/dummy_tl.png",
+    "light": "textures/model/dummy/dummy_tl.png",
+    "nolight": "textures/model/dummy/dummy_tl.png"
+  },
+  "pattern": [
+    {
+      "name": "green",
+      "tick": 0,
+      "objects": [
+        "g300"
+      ]
+    },
+    {
+      "name": "yellow",
+      "tick": 0,
+      "objects": [
+        "y300"
+      ]
+    },
+    {
+      "name": "red",
+      "tick": 0,
+      "objects": [
+        "r300"
+      ]
+    },
+    {
+      "name": "yellow_flush",
+      "tick": 10,
+      "objects": [
+        "y300"
+      ]
+    },
+    {
+      "name": "red_flush",
+      "tick": 10,
+      "objects": [
+        "r300"
+      ]
+    }
+  ],
+  "showBoth": true,
+  "size": 1.5
+}

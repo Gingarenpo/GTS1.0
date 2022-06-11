@@ -1,9 +1,11 @@
 package jp.gingarenpo.gts.controller.cycle;
 
+import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.controller.TrafficController;
 import jp.gingarenpo.gts.controller.phase.Phase;
 import net.minecraft.world.World;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
@@ -11,7 +13,7 @@ import java.util.ArrayList;
  * サイクルは、1つ以上のフェーズを持つ。制御機に登録できる1パターンの制御を表す。
  * サイクル名などは半角英数字を受け付ける（日本語まで対応するとめんどくさい）
  */
-public class Cycle {
+public class Cycle implements Serializable {
 	
 	/**
 	 * このサイクルの名称。サイクルは必ず1つの名前を持つ。
@@ -21,7 +23,7 @@ public class Cycle {
 	/**
 	 * このサイクルが持つフェーズの一覧。Phasesクラスをインスタンスとして持つ。
 	 */
-	protected ArrayList<Phase> phases;
+	protected ArrayList<Phase> phases = new ArrayList<Phase>();
 	
 	/**
 	 * 現在表示中のフェーズ番号
@@ -176,9 +178,14 @@ public class Cycle {
 	 * ラストの場合にリセットしたい場合は別メソッドを使う。ただし継続要求をされている場合はfalseを返し変更を行わない。
 	 */
 	public boolean nextPhase(TrafficController controller, World world) {
-		if (getNowPhase().shouldContinue(controller, controller.getTicks(), controller.isDetected(), world)) return false;
+		if (getNowPhase().shouldContinue(controller, controller.getTicks(), controller.isDetected(), world)) {
+			getNowPhase().addTick();
+			return false;
+		}
 		if (!isLast()) {
+			getNowPhase().resetTick();
 			nowPhase++;
+			GTS.GTSLog.debug(String.format("<%s_%s> Change Phase %s to %s", controller.getName(), this.name, getPhase(nowPhase-1).getName(), getNowPhase().getName()));
 			return true;
 		}
 		return false;
@@ -189,15 +196,20 @@ public class Cycle {
 	 * どんな状態でも一番最初に戻される。ただし継続要求をされている場合はfalseを返し変更を行わない。
 	 */
 	public boolean resetPhase(TrafficController controller, World world) {
-		if (getNowPhase().shouldContinue(controller, controller.getTicks(), controller.isDetected(), world)) return false;
+		if (getNowPhase().shouldContinue(controller, controller.getTicks(), controller.isDetected(), world)) {
+			getNowPhase().addTick();
+			return false;
+		}
+		getNowPhase().resetTick();
 		nowPhase = 0;
+		GTS.GTSLog.debug(String.format("<%s_%s> Reset Phase %s to 0", controller.getName(), this.name, getNowPhase().getName()));
 		return true;
 	}
 	
 	/**
 	 * フェーズを次のものに移行させる。ラストだった場合は自動的にリセットする。
-	 * フェーズがまだ継続を要求している場合は変更を行わず、falseを返す。
-	 * フェーズの変更に成功するとtrueを返す。
+	 * こちらはnextが実行されるとtrue、resetだとfalseになる。
+	 * フェーズ継続だとしてもこうなるので注意
 	 *
 	 * @param controller 制御機のインスタンス
 	 * @param world ワールドインスタンス
@@ -205,9 +217,11 @@ public class Cycle {
 	 */
 	public boolean nextOrResetPhase(TrafficController controller, World world) {
 		if (isLast()) {
-			return resetPhase(controller, world);
+			resetPhase(controller, world);
+			return false;
 		}
-		return nextPhase(controller, world);
+		nextPhase(controller, world);
+		return true;
 	}
 	
 	

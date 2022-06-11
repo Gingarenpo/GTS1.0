@@ -29,9 +29,6 @@ public class DummyConfig extends ConfigBase {
 		b.add("gbody");
 		b.add("ybody");
 		b.add("rbody");
-		b.add("g300");
-		b.add("y300");
-		b.add("r300");
 		b.add("normalg");
 		b.add("normaly");
 		b.add("normalr");
@@ -40,6 +37,22 @@ public class DummyConfig extends ConfigBase {
 		b.add("r");
 		this.setBaseObject(b);
 		
+		b = new ArrayList<String>();
+		b.add("g300");
+		b.add("y300");
+		b.add("r300");
+		
 		this.setSize(1.5f);
+		
+		// LightObjectも指定（デフォルトで青点灯）
+		LightObject l = new LightObject();
+		ArrayList<String> objects = new ArrayList<String>();
+		objects.add("g300");
+		l.setObjects(objects);
+		ArrayList<LightObject> l2 = new ArrayList<>();
+		l2.add(l);
+		this.setPatterns(l2);
+		
+		
 	}
 }

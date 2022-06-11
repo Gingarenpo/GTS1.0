@@ -2,6 +2,7 @@ package jp.gingarenpo.gts.light;
 
 import jp.gingarenpo.gingacore.mqo.MQOFace;
 import jp.gingarenpo.gingacore.mqo.MQOObject;
+import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.data.ConfigBase;
 import jp.gingarenpo.gts.data.Model;
 import net.minecraft.client.Minecraft;
@@ -86,6 +87,8 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 				// ライティングが必要な場合はちょっと変わる
 				for (ConfigBase.LightObject l : config.getPatterns()) {
 					// 現在のサイクルを取得しておき、それを追加する
+					// 発光するかしないかを指定（存在するかどうかで決める）
+					GTS.GTSLog.debug(l.toString() + " / " + o.getName());
 					if (Objects.equals(lightObject, l) && l.getObjects().contains(o.getName())) {
 						// 発光オブジェクト確定
 						this.bindTexture(lightTex);
@@ -98,6 +101,8 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 						nolight = true;
 						render = true;
 					}
+					
+					
 					
 				}
 			}
