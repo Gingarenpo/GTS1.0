@@ -69,6 +69,11 @@ public class TrafficController implements Serializable {
 	 */
 	private String now;
 	
+	/**
+	 * サイクルが更新されたことをお知らせするためのフラグみたいなもの。もっぱら外部からの読み込みを前提としている。
+	 * これを入れておかないと信号機側で信号の変化を検出できない
+	 */
+	private boolean needChange = false;
 	
 	/**
 	 * 交通信号制御機を初期化する。名前が必須案件だが省略して生成するとランダムで32文字のIDが渡される。適宜変更すること。
@@ -80,10 +85,13 @@ public class TrafficController implements Serializable {
 		Cycle cycle = new Cycle("default_cycle");
 		ArrayList object = new ArrayList();
 		object.add("g300");
-		cycle.addPhase(new PhaseBase("default", 30).addChannel(1, new ConfigBase.LightObject().setObjects(object)));
+		cycle.addPhase(new PhaseBase("default", 20).addChannel(1, new ConfigBase.LightObject().setObjects(object).setName("green")));
 		object = new ArrayList();
 		object.add("y300");
-		cycle.addPhase(new PhaseBase("default2", 30).addChannel(1, new ConfigBase.LightObject().setObjects(object)));
+		cycle.addPhase(new PhaseBase("default2", 20).addChannel(1, new ConfigBase.LightObject().setObjects(object).setName("yellow")));
+		object = new ArrayList();
+		object.add("r300");
+		cycle.addPhase(new PhaseBase("default3", 20).addChannel(1, new ConfigBase.LightObject().setObjects(object).setName("red")));
 		cycles.put("default", cycle);
 	}
 	
@@ -224,10 +232,11 @@ public class TrafficController implements Serializable {
 	 * 外部から呼び出されることを前提としている。Tickableを実装したクラス（デフォルトではTileEntity）から呼び出されることを想定。
 	 * 外部からWorldインスタンスを受け取り、サイクルの起動チェックと終了チェックを行う。戻り値は現在指定していないが将来的に
 	 * 変更される可能性もある。
+	 * サイクルが維持された場合はtrue、サイクルが変更された場合はfalseを返す
 	 *
 	 * @param world この制御機が設置されているワールドのインスタンス。
 	 */
-	public void checkCycle(World world) {
+	public boolean checkCycle(World world) {
 		if (now != null) {
 			// 現在サイクルが起動している場合、まず終了条件を確かめる
 			if (!getNowCycle().isLast() && !getNowCycle().nextPhase(this, world) || getNowCycle().isLast() && !getNowCycle().resetPhase(this, world)) {
@@ -235,7 +244,7 @@ public class TrafficController implements Serializable {
 				GTS.GTSLog.debug(String.format("<%s> Cycle %s needs to continue. Skipped", name, now));
 				this.ticks++;
 				
-				return; // 処理を中止する
+				return true; // 処理を中止する
 			}
 			// サイクルの終了が確認でき、上記メソッドでサイクルのリセットを行ったため起動サイクル状態を初期化
 			GTS.GTSLog.debug(String.format("<%s> Cycle %s ended", name, now));
@@ -254,7 +263,33 @@ public class TrafficController implements Serializable {
 		}
 		
 		// 起動条件に一致したサイクルが存在しない場合はnowはnullのままとなり起動せずに次回持越し
-		return;
+		return false;
+	}
+	
+	/**
+	 * サイクルの変更を通知する。このメソッドを実行すると、信号機がそれを検出して
+	 * クライアントサイドへ更新をかける。終了後は信号機の方でこのフラグをオフにする。
+	 */
+	public void notifyNeed() {
+		this.needChange = true;
+		GTS.GTSLog.debug(this.name + " need change.");
+	}
+	
+	/**
+	 * 通知の完了を通知する。これを実行しないと永遠に呼ばれ続けてハングアップする。
+	 * 信号機側で呼び出すべき。
+	 */
+	public void notifyDone() {
+		this.needChange = false;
+		GTS.GTSLog.debug(this.name + " done change.");
+	}
+	
+	/**
+	 * 通知状態を確認する。更新の必要がある場合はtrue
+	 * @return
+	 */
+	public boolean isNeedChange() {
+		return this.needChange;
 	}
 	
 	

@@ -7,6 +7,7 @@ import jp.gingarenpo.gts.core.GTSGUIHandler;
 import jp.gingarenpo.gts.data.Loader;
 import jp.gingarenpo.gts.event.GTSWorldEvent;
 import jp.gingarenpo.gts.light.BlockTrafficLight;
+import jp.gingarenpo.gts.light.PacketTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import jp.gingarenpo.gts.minecraft.GTSSavedData;
 import jp.gingarenpo.gts.proxy.GTSProxy;
@@ -148,6 +149,9 @@ public class GTS {
 		// GUIの登録
 		NetworkRegistry.INSTANCE.registerGuiHandler(GTS.INSTANCE, new GTSGUIHandler()); // GUI
 		
+		// パケットの登録
+		GTSPacket.init();
+		
 		
 	}
 	
@@ -242,6 +246,7 @@ public class GTS {
 		public static void init() {
 			// パケットを登録する
 			GTSPacket.registerPacket(PacketTrafficController.class, PacketTrafficController.class, Side.SERVER);
+			GTSPacket.registerPacket(PacketTrafficLight.class, PacketTrafficLight.class, Side.SERVER);
 		}
 		
 		/**

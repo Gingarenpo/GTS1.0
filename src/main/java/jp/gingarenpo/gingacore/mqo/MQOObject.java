@@ -1,5 +1,6 @@
 package jp.gingarenpo.gingacore.mqo;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
@@ -7,7 +8,7 @@ import java.util.ArrayList;
  * @author 銀河連邦
  *
  */
-public class MQOObject {
+public class MQOObject implements Serializable {
 	
 	// モデルの面（フェイス）
 	ArrayList<MQOFace> face = new ArrayList<MQOFace>(); // 面を番号ごとに格納

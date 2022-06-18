@@ -6,6 +6,16 @@
     "light": "textures/model/dummy/dummy_tl.png",
     "nolight": "textures/model/dummy/dummy_tl.png"
   },
+  "body": [
+    "obj4",
+    "obj5",
+    "obj6"
+  ],
+  "light": [
+    "obj1",
+    "obj2",
+    "obj3"
+  ],
   "pattern": [
     {
       "name": "green",

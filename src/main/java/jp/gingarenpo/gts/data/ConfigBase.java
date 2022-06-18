@@ -3,10 +3,16 @@ package jp.gingarenpo.gts.data;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jp.gingarenpo.gts.GTS;
+import net.minecraft.client.Minecraft;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * RTMに近い形で、JSON形式のオブジェクトとしてマッピングするためのクラス。
@@ -21,10 +27,11 @@ public class ConfigBase implements Serializable {
 	private String id; // コンフィグ同士で重複してはならない固有のID。基本的に全角バイトは含めないこと。
 	private String model; // モデルパスを代入する。パックのZIPファイルからの相対パスで指定すること。
 	private TexturePath textures; // テクスチャをオブジェクト形式で代入する。
+	private ArrayList<String> body; // 無点灯パーツ
+	private ArrayList<String> light; // 点灯パーツ
 	private ArrayList<LightObject> patterns = new ArrayList<LightObject>(); // 光るパターンを列挙する。ここを動的にすると存在しないパターン名が出てきたとき困るけどそこは考える。RYRとかどうするんだって話ありますし
 	private boolean showBoth = true; // これをfalseにすると、「_back」とつけられたオブジェクトを背面灯器と認識し描画しなくなる（ようにしたいために予約）。指定しないとtrue
 	private float size = 1; // このモデルを表示するためのサイズ。ブロック単位で指定する。モデルの大きさがこのサイズに収まるように縮小されて描画される。
-	private ArrayList<String> baseObject; // 発光しない部分のオブジェクト
 	
 	public ConfigBase() {
 		// JSONデシリアライズの為に必要
@@ -78,13 +85,22 @@ public class ConfigBase implements Serializable {
 		this.size = size;
 	}
 	
-	public ArrayList<String> getBaseObject() {
-		return baseObject;
+	public ArrayList<String> getBody() {
+		return body;
 	}
 	
-	public void setBaseObject(ArrayList<String> baseObject) {
-		this.baseObject = baseObject;
+	public void setBody(ArrayList<String> body) {
+		this.body = body;
 	}
+	
+	public ArrayList<String> getLight() {
+		return light;
+	}
+	
+	public void setLight(ArrayList<String> light) {
+		this.light = light;
+	}
+	
 	
 	/**
 	 * テクスチャのパスを格納するところ。テクスチャの種類がRTMとは違い3種類に増えているので要注意。（2種類でも動きますが）
@@ -96,11 +112,15 @@ public class ConfigBase implements Serializable {
 		private String noLight; // 未点灯状態の発光部分テクスチャ。こちらは任意で、指定がない場合はlightと同じものが使われる。
 		
 		@JsonIgnore
-		private BufferedImage baseTex; // ベースのテクスチャの画像（ゲーム中には変更不可！）
+		private transient BufferedImage baseTex; // ベースのテクスチャの画像（ゲーム中には変更不可！）
 		@JsonIgnore
-		private BufferedImage lightTex; // 発光部分のテクスチャ画像
+		private transient BufferedImage lightTex; // 発光部分のテクスチャ画像
 		@JsonIgnore
-		private BufferedImage noLightTex; // 未発光部分のテクスチャ画像
+		private transient BufferedImage noLightTex; // 未発光部分のテクスチャ画像
+		
+		private byte[] baseTexByte;
+		private byte[] lightTexByte;
+		private byte[] noLightTexByte;
 		
 		public TexturePath() {
 			// こちらもJSONのデシリアライズに必要
@@ -153,6 +173,8 @@ public class ConfigBase implements Serializable {
 		public void setNoLightTex(BufferedImage noLightTex) {
 			this.noLightTex = noLightTex;
 		}
+		
+		
 	}
 	
 	/**
@@ -185,10 +207,7 @@ public class ConfigBase implements Serializable {
 			this.objects = objects;
 			return this;
 		}
-		
-		public boolean equals(LightObject l) {
-			return this.objects.equals(l.objects);
-		}
+
 		
 		public int getTick() {
 			return tick;
@@ -206,6 +225,19 @@ public class ConfigBase implements Serializable {
 		@Override
 		public String toString() {
 			return objects.toString();
+		}
+		
+		/**
+		 * インスタンスを複数生成する場合があるので名前の一致とオブジェクトの一致で判断する
+		 * @param obj
+		 * @return
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof LightObject)) return false;
+			LightObject other = (LightObject) obj;
+			if (!other.getName().equals(this.name)) return false;
+			return Objects.equals(other.objects, this.objects);
 		}
 	}
 }

@@ -31,6 +31,7 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 	private ResourceLocation textureLocation = null; // 制御機のテクスチャを擬似的にリソースとして扱うためのもの
 	public static MQO model; // モデル（現在は固定で…）
 	
+	
 	public TileEntityTrafficController() {
 		this.data = new TrafficController();
 		this.texture = createTexture();
@@ -63,7 +64,12 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 	@Override
 	public void update() {
 		if (this.world.isRemote) return; // クライアント側では実行しない
-		data.checkCycle(this.world); // 制御機のデータを更新する
+		boolean cycleChange = data.checkCycle(this.world); // 制御機のデータを更新する
+		this.markDirty();
+		if (!cycleChange) {
+			world.notifyBlockUpdate(this.pos, world.getBlockState(pos), world.getBlockState(pos), 2);
+			this.data.notifyNeed();
+		}
 	}
 	
 	/**
@@ -157,7 +163,7 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 		super.readFromNBT(compound);
 		// 制御機の内容を読み込む
 		GTS.GTSLog.log(Level.INFO, "Read NBT. " + this);
-		byte[] nbtData = compound.getByteArray("tc_data"); // 万が一存在しない場合サイズ0の配列が返ってくる
+		byte[] nbtData = compound.getByteArray("gts_tc_data"); // 万が一存在しない場合サイズ0の配列が返ってくる
 		try (ByteArrayInputStream bais = new ByteArrayInputStream(nbtData)) {
 			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
 				TrafficController read = (TrafficController) ois.readObject(); // Object型になっているがこの中に含まれるのはデータインスタンスかnullのはず
@@ -183,7 +189,7 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
 				oos.writeObject(data); // 制御機のデータを書き込む
-				c.setByteArray("tc_data", baos.toByteArray()); // シリアライズ可能にしてあるはずなので
+				c.setByteArray("gts_tc_data", baos.toByteArray()); // シリアライズ可能にしてあるはずなので
 			}
 		} catch (IOException e) {
 			// 何らかの影響でメモリの確保などに失敗した場合

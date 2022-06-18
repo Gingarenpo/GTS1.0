@@ -1,6 +1,7 @@
 package jp.gingarenpo.gts.data;
 
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -11,12 +12,14 @@ public class Pack {
 	private String name; // GTS.txtで記載があればリストにこの名前が表示されたりする
 	private String credit; // こちらもGTS.txt
 	private ArrayList<Model> models = new ArrayList<Model>(); // モデルセット
+	private File location; // ファイルの場所
 	
 	
-	public Pack(String name, String credit, ArrayList<Model> models) {
+	public Pack(String name, String credit, ArrayList<Model> models, File location) {
 		this.name = name;
 		this.credit = credit;
 		this.models = models;
+		this.location = location;
 	}
 	
 	
@@ -38,6 +41,14 @@ public class Pack {
 	
 	public ArrayList<Model> getModels() {
 		return models;
+	}
+	
+	public File getLocation() {
+		return location;
+	}
+	
+	public void setLocation(File location) {
+		this.location = location;
 	}
 	
 	/**

@@ -1,11 +1,13 @@
 package jp.gingarenpo.gingacore.mqo;
 
+import java.io.Serializable;
+
 /**
  * 面の描画で使用する頂点情報を格納したクラスです。Vectorと同じだけど独自機能追加していくつもりなので一応…
  *
  * @author 銀河連邦
  */
-public class MQOVertex {
+public class MQOVertex implements Serializable {
 
 	private double x;
 	private double y;

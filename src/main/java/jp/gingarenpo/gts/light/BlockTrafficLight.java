@@ -1,7 +1,6 @@
 package jp.gingarenpo.gts.light;
 
 import jp.gingarenpo.gts.GTS;
-import jp.gingarenpo.gts.controller.TileEntityTrafficController;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -73,7 +72,7 @@ public class BlockTrafficLight extends BlockContainer {
 	@Nullable
 	@Override
 	public TileEntity createNewTileEntity(World worldIn, int meta) {
-		TileEntityTrafficLight te = new TileEntityTrafficLight();
+		TileEntityTrafficLight te = new TileEntityTrafficLight(true);
 		return te;
 	}
 	
@@ -106,7 +105,5 @@ public class BlockTrafficLight extends BlockContainer {
 			// もし間に合わなかったら、もしくはプレイヤーじゃない別の何かによって置かれたら
 			return;
 		}
-		// 検索をかける
-		te.search((EntityPlayer) placer);
 	}
 }

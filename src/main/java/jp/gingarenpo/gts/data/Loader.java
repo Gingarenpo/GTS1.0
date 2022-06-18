@@ -178,7 +178,7 @@ public class Loader {
 				}
 				
 				// パックを生成する
-				res = new Pack((String) p.getOrDefault("name", "<No Name>"), (String) p.getOrDefault("credit", "<No Credit>"), m); // これで生成
+				res = new Pack((String) p.getOrDefault("name", "<No Name>"), (String) p.getOrDefault("credit", "<No Credit>"), m, pack); // これで生成
 			}
 		} catch (IOException e) {
 			// I/Oアクセスに失敗して開くことができなかった場合、もしくはZip形式じゃない場合

@@ -185,6 +185,7 @@ public class Cycle implements Serializable {
 		if (!isLast()) {
 			getNowPhase().resetTick();
 			nowPhase++;
+			controller.notifyNeed();
 			GTS.GTSLog.debug(String.format("<%s_%s> Change Phase %s to %s", controller.getName(), this.name, getPhase(nowPhase-1).getName(), getNowPhase().getName()));
 			return true;
 		}
@@ -202,6 +203,7 @@ public class Cycle implements Serializable {
 		}
 		getNowPhase().resetTick();
 		nowPhase = 0;
+		controller.notifyNeed();
 		GTS.GTSLog.debug(String.format("<%s_%s> Reset Phase %s to 0", controller.getName(), this.name, getNowPhase().getName()));
 		return true;
 	}

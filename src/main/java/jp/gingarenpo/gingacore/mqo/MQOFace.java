@@ -8,6 +8,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import org.lwjgl.opengl.GL11;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
@@ -17,7 +18,7 @@ import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
  *
  * @author 銀河連邦
  */
-public class MQOFace {
+public class MQOFace implements Serializable {
 
 	/**
 	 * この面の向きを表す定数で、上面を表します（すなわち、全頂点のY座標が一致します）。

@@ -1,9 +1,6 @@
 package jp.gingarenpo.gingacore.mqo;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -25,7 +22,7 @@ import net.minecraftforge.fml.common.FMLCommonHandler;
  *
  * @author 銀河連邦
  */
-public class MQO {
+public class MQO implements Serializable {
 
 	/**
 	 * オブジェクトの名前をキーとして格納しています

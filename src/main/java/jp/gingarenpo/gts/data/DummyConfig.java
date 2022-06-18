@@ -11,7 +11,7 @@ import java.util.ArrayList;
 public class DummyConfig extends ConfigBase {
 	
 	public DummyConfig() {
-		this.setId("dummy");
+		this.setId("dummy"); // 名前はこれで固定
 		// テクスチャを無理やり指定
 		TexturePath t = new TexturePath();
 		try {
@@ -23,7 +23,7 @@ public class DummyConfig extends ConfigBase {
 		}
 		this.setTextures(t);
 		
-		// オブジェクトも無理やり（）
+		// ベースのオブジェクト（無点灯）指定
 		ArrayList<String> b = new ArrayList<String>();
 		b.add("body");
 		b.add("gbody");
@@ -35,22 +35,40 @@ public class DummyConfig extends ConfigBase {
 		b.add("g");
 		b.add("y");
 		b.add("r");
-		this.setBaseObject(b);
+		this.setBody(b);
 		
+		// 点灯部分指定
 		b = new ArrayList<String>();
 		b.add("g300");
 		b.add("y300");
 		b.add("r300");
+		this.setLight(b);
 		
 		this.setSize(1.5f);
 		
 		// LightObjectも指定（デフォルトで青点灯）
 		LightObject l = new LightObject();
+		l.setName("green");
 		ArrayList<String> objects = new ArrayList<String>();
 		objects.add("g300");
 		l.setObjects(objects);
+		
+		LightObject l3 = new LightObject();
+		l3.setName("yellow");
+		objects = new ArrayList<String>();
+		objects.add("y300");
+		l3.setObjects(objects);
+		
+		LightObject l4 = new LightObject();
+		l4.setName("red");
+		objects = new ArrayList<String>();
+		objects.add("r300");
+		l4.setObjects(objects);
+		
 		ArrayList<LightObject> l2 = new ArrayList<>();
 		l2.add(l);
+		l2.add(l3);
+		l2.add(l4);
 		this.setPatterns(l2);
 		
 		

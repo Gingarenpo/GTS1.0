@@ -46,7 +46,6 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		// リソースチェック
 		if (baseTex == null) {
 			// 存在しない場合のみ追加（IDでテクスチャを管理）
-			System.out.println(config.getTextures());
 			baseTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("tl_base_" + config.getId(), new DynamicTexture(config.getTextures().getBaseTex()));
 		}
 		if (lightTex == null) {
@@ -67,6 +66,7 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		}
 		
 		
+		
 		// OpenGL準備
 		GL11.glPushMatrix(); // 現在の行列情報をスタックに押し込む。これで自由に弄ってもここから戻せば元通り！
 		GL11.glTranslated(x + 0.5, y + 0.5, z); // ブロックの原点を描画対象の座標に移動させる（ただしMQOの性質上原点を中心に移動させる）
@@ -78,7 +78,7 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 			boolean light = false; // 光るかどうか
 			boolean nolight = false; // 光らないかどうか
 			// オブジェクト毎に繰り返す
-			if (config.getBaseObject().contains(o.getName())) {
+			if (config.getBody().contains(o.getName())) {
 				// このオブジェクトは無発光オブジェクトとして描画する
 				this.bindTexture(baseTex);
 				render = true;
@@ -86,16 +86,16 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 			else {
 				// ライティングが必要な場合はちょっと変わる
 				for (ConfigBase.LightObject l : config.getPatterns()) {
-					// 現在のサイクルを取得しておき、それを追加する
+					// 一致しない場合はスルー
+					if (!l.equals(lightObject)) continue;
 					// 発光するかしないかを指定（存在するかどうかで決める）
-					GTS.GTSLog.debug(l.toString() + " / " + o.getName());
-					if (Objects.equals(lightObject, l) && l.getObjects().contains(o.getName())) {
+					if (Objects.equals(l, lightObject) && l.getObjects().contains(o.getName())) {
 						// 発光オブジェクト確定
 						this.bindTexture(lightTex);
 						light = true;
 						render = true;
 					}
-					else if (l.getObjects().contains(o.getName())) {
+					else if (te.getAddon().getConfig().getLight().contains(o.getName())) {
 						// 未発光オブジェクト確定
 						this.bindTexture(noLightTex);
 						nolight = true;
@@ -119,7 +119,7 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 			
 			// 実際に描画
 			for (MQOFace f : o.getFaces()) {
-				f.drawFace(nolight ? 0.2f : 0);
+				f.drawFace(nolight ? 0.8f : (light ? 1.0f : 0));
 			}
 			
 			if (light) {

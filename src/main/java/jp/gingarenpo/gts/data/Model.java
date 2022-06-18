@@ -3,14 +3,16 @@ package jp.gingarenpo.gts.data;
 import jp.gingarenpo.gingacore.mqo.MQO;
 
 import javax.imageio.ImageIO;
+import java.io.Serializable;
 
 /**
  * モデルセットの一覧。パックには複数あることがあるよ
  */
-public class Model {
+public class Model implements Serializable {
 	
 	private ConfigBase config; // コンフィグ
 	private MQO model; // モデル
+
 	
 	public Model(ConfigBase config, MQO model) {
 		this.config = config;
@@ -34,5 +36,13 @@ public class Model {
 	
 	public void setModel(MQO model) {
 		this.model = model;
+	}
+	
+	@Override
+	public String toString() {
+		return "Model{" +
+					   "config=" + config +
+					   ", model=" + model +
+					   '}';
 	}
 }
