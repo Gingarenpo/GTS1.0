@@ -109,7 +109,7 @@ public class MQOFace implements Serializable {
 	 *
 	 * @param color バッファカラーを指定します。0を指定すると自動で陰影をつけますが、真っ黒にしたい場合は妥協して0.0000001とかで。
 	 */
-	public void drawFace(double color) {
+	public void drawFace(float color) {
 		// Tessellatorを試してみる
 		final Tessellator t = Tessellator.getInstance(); // インスタンスを取得
 
@@ -120,13 +120,12 @@ public class MQOFace implements Serializable {
 					mqo.getVertexs().get(v[i]).getY(), mqo.getVertexs().get(v[i]).getZ())
 			.tex(uv.get(i)[0], uv.get(i)[1]);
 			
-			// float変換
-			float color2 = (float) color;
+
 			
-			if (color != 0) t.getBuffer().color(color2, color2, color2, 1.0f);
-			else if (getDirection() == EnumFacing.UP || getDirection() == EnumFacing.DOWN) t.getBuffer().color(1.0f, 1.0f, 1.0f, 1.0f);
-			else if (getDirection() == EnumFacing.EAST || getDirection() == EnumFacing.WEST) t.getBuffer().color(0.8f, 0.8f, 0.8f, 1.0f);
-			else if (getDirection() == EnumFacing.SOUTH || getDirection() == EnumFacing.NORTH) t.getBuffer().color(0.5f, 0.5f, 0.5f, 1.0f);
+			if (color != 0.0f) t.getBuffer().color(color, color, color, 1.0f);
+			else if (getDirection() == EnumFacing.UP) t.getBuffer().color(1.0f, 1.0f, 1.0f, 1.0f);
+			else if (getDirection() == EnumFacing.EAST || getDirection() == EnumFacing.WEST || getDirection() == EnumFacing.SOUTH || getDirection() == EnumFacing.NORTH) t.getBuffer().color(0.8f, 0.8f, 0.8f, 1.0f);
+			else if ( getDirection() == EnumFacing.DOWN) t.getBuffer().color(0.5f, 0.5f, 0.5f, 1.0f);
 			else t.getBuffer().color(1.0f, 1.0f, 1.0f, 1.0f);
 			
 			
@@ -148,6 +147,7 @@ public class MQOFace implements Serializable {
 		//System.out.println(Math.acos(cos));
 		return EnumFacing.fromAngle(Math.toDegrees(Math.acos(cos)));
 	}
+	
 
 	
 }

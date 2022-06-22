@@ -1,6 +1,7 @@
 package jp.gingarenpo.gts.light;
 
 import jp.gingarenpo.gts.controller.TrafficController;
+import jp.gingarenpo.gts.data.ConfigBase;
 
 import java.io.Serializable;
 
@@ -19,30 +20,22 @@ public class TrafficLight implements Serializable {
 	private int signal;
 	
 	/**
-	 * アタッチしている制御機。していない場合はNull。
+	 * 現時点での交通信号機の点灯するオブジェクト。レンダーから呼び出す際に使用する。
 	 */
-	private TrafficController parent; // どの制御機にアタッチしているかの情報
+	private ConfigBase.LightObject light;
 	
-	public TrafficLight() {}
+	/**
+	 * 更新の必要性があるかどうかのフラグ。
+	 */
+	private boolean update = false;
+	
+	
+	public TrafficLight() {
+		light = new ConfigBase.LightObject().setName("DUMMY"); // とりあえずダミーのライトを入れてNullを回避する
+	}
 	
 	public TrafficLight(int signal) {
 		this.signal = signal;
-	}
-	
-	public TrafficController getParent() {
-		return parent;
-	}
-	
-	public void setParent(TrafficController parent) {
-		this.parent = parent;
-	}
-	
-	/**
-	 * この信号機が制御機をアタッチしていればTrueを返す。
-	 * @return
-	 */
-	public boolean isAttached() {
-		return parent != null;
 	}
 	
 	public int getSignal() {
@@ -53,11 +46,34 @@ public class TrafficLight implements Serializable {
 		this.signal = signal;
 	}
 	
-	@Override
-	public String toString() {
-		return "TrafficLight{" +
-					   "signal=" + signal +
-					   ", parent=" + parent +
-					   '}';
+	public void setLight(ConfigBase.LightObject light) {
+		this.light = light;
+		this.notifyUpdate();
+	}
+	
+	public ConfigBase.LightObject getLight() {
+		return this.light;
+	}
+	
+	/**
+	 * 信号機の再描画を要求する。TileEntityがこのフラグを監視してupdateを行う。
+	 */
+	public void notifyUpdate() {
+		this.update = true;
+	}
+	
+	/**
+	 * 信号機の再描画終了後に呼び出される。変更を終了する。
+	 */
+	public void doneUpdate() {
+		this.update = false;
+	}
+	
+	/**
+	 * 再描画が必要かどうかを返す。
+	 * @return
+	 */
+	public boolean isUpdate() {
+		return this.update;
 	}
 }

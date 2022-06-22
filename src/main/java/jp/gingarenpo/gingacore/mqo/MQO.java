@@ -254,7 +254,7 @@ public class MQO implements Serializable {
 			}
 		}
 		// ここで、正規化する前の最大・最小座標が入る
-		System.out.println("正規化前座標最小XYZ: " + minX + ", " + minY + ", " + minZ + ", 最大XYZ: " + maxX + ", " + maxY + ", " + maxZ);
+		//System.out.println("正規化前座標最小XYZ: " + minX + ", " + minY + ", " + minZ + ", 最大XYZ: " + maxX + ", " + maxY + ", " + maxZ);
 
 		// 次に、サイズに最適化するための係数を算出する
 		// XYZそれぞれの距離を算出する
@@ -276,7 +276,7 @@ public class MQO implements Serializable {
 		}
 
 		// 処理終了（faceの方には頂点番号しか格納していないので弄る必要がない）
-		System.out.println("正規化後座標最小XYZ: " + minX * per + ", " + minY * per + ", " + minZ * per + ", 最大XYZ: " + maxX * per + ", " + maxY * per + ", " + maxZ * per);
+		//System.out.println("正規化後座標最小XYZ: " + minX * per + ", " + minY * per + ", " + minZ * per + ", 最大XYZ: " + maxX * per + ", " + maxY * per + ", " + maxZ * per);
 		return original;
 
 	}
@@ -316,7 +316,7 @@ public class MQO implements Serializable {
 		// ラッピング処理
 		for (final MQOObject obj : object.values()) {
 			for (final MQOFace face : obj.getFaces()) {
-				face.drawFace(0.0);
+				face.drawFace(0.0f);
 			}
 		}
 	}
@@ -325,7 +325,7 @@ public class MQO implements Serializable {
 	 * 各々のオブジェクトに存在する面に対してdrawFace()を呼び出すだけのラッピングメソッドです。
 	 * 日照角度を指定するとそれに合わせて影をつけます。影をつけたくない場合は引数なしで。
 	 */
-	public void draw(double sun) {
+	public void draw(float sun) {
 		// ラッピング処理
 		for (final MQOObject obj : object.values()) {
 			for (final MQOFace face : obj.getFaces()) {

@@ -3,6 +3,8 @@ package jp.gingarenpo.gts.controller.cycle;
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.controller.TrafficController;
 import jp.gingarenpo.gts.controller.phase.Phase;
+import jp.gingarenpo.gts.data.ConfigBase;
+import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import net.minecraft.world.World;
 
 import java.io.Serializable;
@@ -185,7 +187,12 @@ public class Cycle implements Serializable {
 		if (!isLast()) {
 			getNowPhase().resetTick();
 			nowPhase++;
-			controller.notifyNeed();
+			for (TileEntityTrafficLight tl : controller.getTrafficLights()) {
+				// アタッチしている信号機に送信する
+				ConfigBase.LightObject l = getNowPhase().getChannel(tl.getData().getSignal());
+				if (l == null) continue;
+				tl.getData().setLight(l);
+			}
 			GTS.GTSLog.debug(String.format("<%s_%s> Change Phase %s to %s", controller.getName(), this.name, getPhase(nowPhase-1).getName(), getNowPhase().getName()));
 			return true;
 		}
@@ -203,7 +210,12 @@ public class Cycle implements Serializable {
 		}
 		getNowPhase().resetTick();
 		nowPhase = 0;
-		controller.notifyNeed();
+		for (TileEntityTrafficLight tl : controller.getTrafficLights()) {
+			// アタッチしている信号機に送信する
+			ConfigBase.LightObject l = getNowPhase().getChannel(tl.getData().getSignal());
+			if (l == null) continue;
+			tl.getData().setLight(l);
+		}
 		GTS.GTSLog.debug(String.format("<%s_%s> Reset Phase %s to 0", controller.getName(), this.name, getNowPhase().getName()));
 		return true;
 	}

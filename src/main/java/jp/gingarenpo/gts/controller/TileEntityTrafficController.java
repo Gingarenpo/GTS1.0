@@ -3,18 +3,22 @@ package jp.gingarenpo.gts.controller;
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.core.GTSTileEntity;
+import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
 import org.apache.logging.log4j.Level;
 
 import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.util.ArrayList;
 
 /**
  * 交通信号制御機に関するTileEntity。制御機は送信側となるため、受信時の処理は基本的にない。
@@ -42,13 +46,41 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 	}
 	
 	/**
+	 * このTileEntityの初期化が終わりワールドにロードされるときに呼び出される。
+	 */
+	@Override
+	public void onLoad() {
+		search();
+	}
+	
+	/**
+	 * 制御機の周りの信号機を再検出し、それをアタッチしてリストに格納する。
+	 * 非常に重い処理の為、何度も呼び出さないこと。何かをトリガーにして発動させる。
+	 */
+	public void search() {
+		// デフォでコンフィグに入ったrangeの範囲の制御機を読み込んでリストに格納する
+		// ごり押しだけど仕方がない
+		ArrayList<TileEntityTrafficLight> list = new ArrayList<TileEntityTrafficLight>();
+		for (int x = this.pos.getX() - GTS.GTSConfig.detectRange; x < this.pos.getX() + GTS.GTSConfig.detectRange; x++) {
+			for (int y = this.pos.getY() - GTS.GTSConfig.detectRange; y < this.pos.getY() + GTS.GTSConfig.detectRange; y++) {
+				for (int z = this.pos.getZ() - GTS.GTSConfig.detectRange; z < this.pos.getZ() + GTS.GTSConfig.detectRange; z++) {
+					TileEntity te = world.getTileEntity(new BlockPos(x, y, z)); // TileEntityを取得
+					if (!(te instanceof TileEntityTrafficLight)) continue;
+					list.add((TileEntityTrafficLight) te);
+				}
+			}
+		}
+		this.getData().setTrafficLights(list); // 見つかったリストに置き換え
+	}
+	
+	/**
 	 * モデルが読み込まれていない場合このメソッドで読み込む
 	 */
 	public static void loadModel() {
 		// 作成する
 		try {
 			model = new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/default_traffic_controller.mqo")).getInputStream());
-			model = model.normalize(2); // 正規化
+			model.normalize(2); // 正規化
 		} catch (IOException e) {
 			// 何らかの影響でMQOが呼べなかった場合
 			e.printStackTrace();
@@ -67,8 +99,8 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 		boolean cycleChange = data.checkCycle(this.world); // 制御機のデータを更新する
 		this.markDirty();
 		if (!cycleChange) {
-			world.notifyBlockUpdate(this.pos, world.getBlockState(pos), world.getBlockState(pos), 2);
-			this.data.notifyNeed();
+			// world.notifyBlockUpdate(this.pos, world.getBlockState(pos), world.getBlockState(pos), 2); // なんかなくても動く
+			this.search(); // サイクル変わったら再読み込みする
 		}
 	}
 	

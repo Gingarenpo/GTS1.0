@@ -5,6 +5,8 @@ import jp.gingarenpo.gts.controller.cycle.Cycle;
 import jp.gingarenpo.gts.controller.phase.Phase;
 import jp.gingarenpo.gts.controller.phase.PhaseBase;
 import jp.gingarenpo.gts.data.ConfigBase;
+import jp.gingarenpo.gts.light.TileEntityTrafficLight;
+import jp.gingarenpo.gts.light.TrafficLight;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -70,10 +72,9 @@ public class TrafficController implements Serializable {
 	private String now;
 	
 	/**
-	 * サイクルが更新されたことをお知らせするためのフラグみたいなもの。もっぱら外部からの読み込みを前提としている。
-	 * これを入れておかないと信号機側で信号の変化を検出できない
+	 * この制御機が制御すべき信号機のTileEntityを格納しておくインスタンス
 	 */
-	private boolean needChange = false;
+	private ArrayList<TileEntityTrafficLight> trafficLights = new ArrayList<TileEntityTrafficLight>();
 	
 	/**
 	 * 交通信号制御機を初期化する。名前が必須案件だが省略して生成するとランダムで32文字のIDが渡される。適宜変更すること。
@@ -109,6 +110,22 @@ public class TrafficController implements Serializable {
 	 */
 	public HashMap<String, Cycle> getCycles() {
 		return cycles;
+	}
+	
+	/**
+	 * アタッチしている信号機のTileEntity一覧を返す。
+	 * @return アタッチしている信号機
+	 */
+	public ArrayList<TileEntityTrafficLight> getTrafficLights() {
+		return trafficLights;
+	}
+	
+	/**
+	 * 信号機一覧を一括で更新する。
+	 * @param trafficLights 新たな信号機リスト。
+	 */
+	public void setTrafficLights(ArrayList<TileEntityTrafficLight> trafficLights) {
+		this.trafficLights = trafficLights;
 	}
 	
 	/**
@@ -241,7 +258,7 @@ public class TrafficController implements Serializable {
 			// 現在サイクルが起動している場合、まず終了条件を確かめる
 			if (!getNowCycle().isLast() && !getNowCycle().nextPhase(this, world) || getNowCycle().isLast() && !getNowCycle().resetPhase(this, world)) {
 				// サイクルを終了できない場合（まだこのサイクルが起動中である場合）
-				GTS.GTSLog.debug(String.format("<%s> Cycle %s needs to continue. Skipped", name, now));
+				// GTS.GTSLog.debug(String.format("<%s> Cycle %s needs to continue. Skipped", name, now));
 				this.ticks++;
 				
 				return true; // 処理を中止する
@@ -266,31 +283,7 @@ public class TrafficController implements Serializable {
 		return false;
 	}
 	
-	/**
-	 * サイクルの変更を通知する。このメソッドを実行すると、信号機がそれを検出して
-	 * クライアントサイドへ更新をかける。終了後は信号機の方でこのフラグをオフにする。
-	 */
-	public void notifyNeed() {
-		this.needChange = true;
-		GTS.GTSLog.debug(this.name + " need change.");
-	}
-	
-	/**
-	 * 通知の完了を通知する。これを実行しないと永遠に呼ばれ続けてハングアップする。
-	 * 信号機側で呼び出すべき。
-	 */
-	public void notifyDone() {
-		this.needChange = false;
-		GTS.GTSLog.debug(this.name + " done change.");
-	}
-	
-	/**
-	 * 通知状態を確認する。更新の必要がある場合はtrue
-	 * @return
-	 */
-	public boolean isNeedChange() {
-		return this.needChange;
-	}
+
 	
 	
 
