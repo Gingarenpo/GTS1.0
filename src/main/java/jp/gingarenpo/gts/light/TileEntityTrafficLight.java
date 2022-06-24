@@ -23,23 +23,18 @@ import java.io.*;
  * 交通信号機（受信機）のTileEntity情報。
  * 動的ﾃｸｽﾁｬをとにかく大量に生成するためメモリ不足で落ちるかもしれない
  */
-public class TileEntityTrafficLight extends GTSTileEntity implements ITickable {
+public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, Serializable {
 	
 	private Model addon = null; // この信号機が一体どの種類のモデルを使うのか。基本的に必ず何かしらが入るはず
 	private TrafficLight data = null; // この信号機のデータ
+	private double angle = 0.0f; // 設置された向き（角度）
 	
-	/**
-	 * デフォルトコンストラクタは基本呼び出さない。
-	 */
-	public TileEntityTrafficLight() {
-		setData(new TrafficLight(1));
-	}
 	
 	/**
 	 * true入れようがfalse入れようがダミーが入る
-	 * @param dummy
+	 *
 	 */
-	public TileEntityTrafficLight(boolean dummy) {
+	public TileEntityTrafficLight() {
 		setDummyModel();
 		setData(new TrafficLight(1));
 	}
@@ -93,7 +88,6 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable {
 		try (ByteArrayInputStream bais = new ByteArrayInputStream(byteData)) {
 			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
 				this.data = (TrafficLight) ois.readObject();
-				GTS.GTSLog.log(Level.DEBUG, "Read NBT(TL). data -> " + data);
 			}
 		} catch (IOException | ClassNotFoundException e) {
 			// メモリ不足などでストリームを確保できなかった場合、あるいはオブジェクトが正しく読み込まれなかった時
@@ -114,8 +108,6 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable {
 			// メモリ不足などでストリームを確保できなかった場合
 			GTS.GTSLog.log(Level.ERROR, "Can't write data object Phase2[Data](Maybe out of memory) -> " + e.getMessage());
 		}
-		
-		GTS.GTSLog.log(Level.DEBUG, "Write NBT(TL). data = " + data);
 		
 		
 		return c;
@@ -181,5 +173,13 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable {
 			world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
 			this.data.doneUpdate();
 		}
+	}
+	
+	public double getAngle() {
+		return angle;
+	}
+	
+	public void setAngle(double angle) {
+		this.angle = angle;
 	}
 }

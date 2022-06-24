@@ -1,12 +1,15 @@
 package jp.gingarenpo.gts.controller;
 
+import jp.gingarenpo.gingacore.mqo.MQOObject;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.EnumFacing;
 import org.lwjgl.opengl.GL11;
 
@@ -44,13 +47,16 @@ public class RendererTrafficController extends TileEntitySpecialRenderer<TileEnt
 		// レンダリング開始
 		GL11.glPushMatrix(); // 現在の行列情報をスタックに押し込む。これで自由に弄ってもここから戻せば元通り！
 		GL11.glTranslated(x + 0.5, y, z + 0.5); // ブロックの原点を描画対象の座標に移動させる（ただしMQOの性質上原点を中心に移動させる）
-		RenderHelper.disableStandardItemLighting();
-		
 		GlStateManager.shadeModel(GL11.GL_SMOOTH); // スムージング
 		
-		TileEntityTrafficController.model.draw(getWorld().getCelestialAngleRadians(partialTicks));
+		Tessellator t = Tessellator.getInstance();
+		t.getBuffer().begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_COLOR);
 		
-		RenderHelper.enableStandardItemLighting();
+		for (MQOObject o: TileEntityTrafficController.model.getObjects4Loop()) {
+			o.draw(t.getBuffer(), 0.0f);
+		}
+		t.draw();
+		
 		GlStateManager.shadeModel(GL11.GL_FLAT);
 		GL11.glPopMatrix(); // 遊んだ後は後始末。後始末とかは任せたぞ～♪
 	}

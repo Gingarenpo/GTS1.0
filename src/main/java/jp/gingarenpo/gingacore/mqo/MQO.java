@@ -10,10 +10,13 @@ import java.util.regex.Pattern;
 import jp.gingarenpo.gingacore.annotation.NeedlessMinecraft;
 import jp.gingarenpo.gingacore.helper.GMathHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import org.lwjgl.opengl.GL11;
 
 /**
  * このクラスは、MQOオブジェクトを作成します。このオブジェクト自体は基本的に使わず、サブオブジェクトを頻繁に使う
@@ -309,30 +312,9 @@ public class MQO implements Serializable {
 		return object.values();
 	}
 
-	/**
-	 * 各々のオブジェクトに存在する面に対してdrawFace()を呼び出すだけのラッピングメソッドです。
-	 */
-	public void draw() {
-		// ラッピング処理
-		for (final MQOObject obj : object.values()) {
-			for (final MQOFace face : obj.getFaces()) {
-				face.drawFace(0.0f);
-			}
-		}
-	}
 	
-	/**
-	 * 各々のオブジェクトに存在する面に対してdrawFace()を呼び出すだけのラッピングメソッドです。
-	 * 日照角度を指定するとそれに合わせて影をつけます。影をつけたくない場合は引数なしで。
-	 */
-	public void draw(float sun) {
-		// ラッピング処理
-		for (final MQOObject obj : object.values()) {
-			for (final MQOFace face : obj.getFaces()) {
-				face.drawFace(sun);
-			}
-		}
-	}
+	
+
 	
 
 	/**

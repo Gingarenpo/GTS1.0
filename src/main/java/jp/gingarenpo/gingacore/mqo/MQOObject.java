@@ -1,6 +1,9 @@
 package jp.gingarenpo.gingacore.mqo;
 
+import net.minecraft.client.renderer.BufferBuilder;
+
 import java.io.Serializable;
+import java.nio.Buffer;
 import java.util.ArrayList;
 
 /**
@@ -41,5 +44,16 @@ public class MQOObject implements Serializable {
 	
 	public MQO getParent() {
 		return mqo;
+	}
+	
+	/**
+	 * 指定した色を使用してこのオブジェクトを描画するバッファを返します。
+	 *
+	 * @param color 色（0=自動シャドー）
+	 */
+	public void draw(BufferBuilder b, float color) {
+		for (MQOFace f : this.face) {
+			f.drawFace(b, color);
+		}
 	}
 }

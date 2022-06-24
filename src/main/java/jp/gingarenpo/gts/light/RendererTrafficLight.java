@@ -8,8 +8,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.pipeline.LightUtil;
 import org.lwjgl.opengl.ARBFragmentShader;
@@ -29,7 +31,6 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 	private ResourceLocation lightTex;
 	private ResourceLocation noLightTex; // それぞれテクスチャ
 	
-	private int shader; // シェーダー（デフォ0）
 	
 	/**
 	 * 信号機を実際に描画するためのレンダー。ここでOpenGLに関する描画を呼び出すことができる。
@@ -45,8 +46,8 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 	@Override
 	public void render(TileEntityTrafficLight te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
 		super.render(te, x, y, z, partialTicks, destroyStage, alpha); // 一応
-		
-		if (shader == 0) createShader();
+		long time = System.currentTimeMillis();
+
 		
 		if (te.getAddon() == null) return; // アドオンがまだ読み込まれていない場合（ダミーでも）は抜ける
 		Model addon = te.getAddon(); // Nullでないことが保証される
@@ -80,11 +81,16 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		
 		// OpenGL準備
 		GL11.glPushMatrix(); // 現在の行列情報をスタックに押し込む。これで自由に弄ってもここから戻せば元通り！
-		GL11.glTranslated(x + 0.5, y + 0.5, z); // ブロックの原点を描画対象の座標に移動させる（ただしMQOの性質上原点を中心に移動させる）
+		GL11.glTranslated(x, y, z);
+		GL11.glRotated(te.getAngle(), 0, 1, 0); // 回転させる
+		GL11.glTranslated(0.5, 0.5, 0); // ブロックの原点を描画対象の座標に移動させる（ただしMQOの性質上原点を中心に移動させる）
+		
 		GlStateManager.shadeModel(GL11.GL_SMOOTH);
 		GlStateManager.disableLighting();
-		RenderHelper.disableStandardItemLighting();
-		OpenGlHelper.glUseProgram(shader);
+		
+		// Tessellator 用意
+		Tessellator t = Tessellator.getInstance();
+		t.getBuffer().begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_COLOR);
 		
 		
 		// オブジェクト毎にループ
@@ -127,54 +133,23 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 				continue;
 			}
 			
-			if (light || nolight) {
-			
-				
-			}
 			
 			// 実際に描画
-			for (MQOFace f : o.getFaces()) {
-				float color = nolight ? 0.1f : (light ? 1.0f : 0.0f);
-				f.drawFace(color);
-			}
+			float color = nolight ? 0.1f : (light ? 1.0f : 0.0f);
+			o.draw(t.getBuffer(), color);
 			
-			if (light || nolight) {
-			
-			}
 			
 		}
 		
+		t.draw(); // 描画
+		
 		// 後片付け
-		OpenGlHelper.glUseProgram(0);
-		RenderHelper.enableStandardItemLighting();
 		GlStateManager.enableLighting();
 		GlStateManager.shadeModel(GL11.GL_FLAT);
 		GL11.glPopMatrix();
+		
+		System.out.println((System.currentTimeMillis() - time) + "ms");
 	}
 	
-	private void createShader() {
-		// シェーダーを作成する
-		int vertex = OpenGlHelper.glCreateShader(ARBVertexShader.GL_VERTEX_SHADER_ARB);
-		int flagment = OpenGlHelper.glCreateShader(ARBFragmentShader.GL_FRAGMENT_SHADER_ARB);
-		OpenGlHelper.glShaderSource(vertex, getVertexShaderScript());
-		OpenGlHelper.glShaderSource(flagment, getFragmentShaderScript());
-		OpenGlHelper.glCompileShader(vertex);
-		OpenGlHelper.glCompileShader(flagment);
-		this.shader = OpenGlHelper.glCreateProgram();
-		OpenGlHelper.glAttachShader(shader, vertex);
-		OpenGlHelper.glAttachShader(shader, flagment);
-		OpenGlHelper.glLinkProgram(shader);
-	}
 	
-	private ByteBuffer getVertexShaderScript() {
-		ByteBuffer b = ByteBuffer.allocateDirect(2048);
-		b.put(("attribute vec3 position;void main(void){gl_Position = vec4(position, 1.0);}").getBytes(StandardCharsets.UTF_8));
-		return b;
-	}
-	
-	private ByteBuffer getFragmentShaderScript() {
-		ByteBuffer b = ByteBuffer.allocateDirect(2048);
-		b.put(("void main(void){gl_FragColor = vec4(0.1, 1.0, 1.0, 1.0);}").getBytes(StandardCharsets.UTF_8));
-		return b;
-	}
 }

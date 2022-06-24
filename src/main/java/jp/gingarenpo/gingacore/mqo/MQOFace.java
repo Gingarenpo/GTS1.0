@@ -1,7 +1,9 @@
 package jp.gingarenpo.gingacore.mqo;
 
+import jp.gingarenpo.gingacore.helper.GMathHelper;
 import jp.gingarenpo.gingacore.helper.GPosHelper;
 import jp.gingarenpo.gingacore.helper.GRenderHelper;
+import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.tileentity.TileEntity;
@@ -19,35 +21,10 @@ import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
  * @author 銀河連邦
  */
 public class MQOFace implements Serializable {
-
-	/**
-	 * この面の向きを表す定数で、上面を表します（すなわち、全頂点のY座標が一致します）。
-	 * @deprecated 廃止予定
-	 */
-	public static final int FACING_TOP = 1;
-	/**
-	 * この面の向きを表す定数で、南北方向を向いていることを表します（すなわち、全頂点のZ座標が固定されています）。
-	 * @deprecated 廃止予定
-	 */
-	public static final int FACING_SIDE_NS = 2;
-
-	/**
-	 * この面の向きを表す定数で、東西方向を向いていることを表します（すなわち、全頂点のX座標が一致します）。
-	 * @deprecated 廃止予定
-	 */
-	public static final int FACING_SIDE_EW = 4;
-
-	/**
-	 * この面はXYZいずれの軸にも平行でない面であることを表します。
-	 * @deprecated 廃止予定
-	 */
-	public static final int FACING_NO = 0;
-
+	
 	private final MQOObject mqo; // 親オブジェクト
 	private final int[] v; // 頂点番号を格納（固定なのでプリミティブ配列で）
 	private final ArrayList<double[]> uv = new ArrayList<double[]>(); // 頂点対応のUV座標を格納
-	private int facing; // この面が向いている向き。
-	private float cos; // 地面との成すcos
 
 	/**
 	 * 指定した親オブジェクト内に存在する面として、新規に面オブジェクトを作成します。面オブジェクトは三角形か四角形
@@ -82,70 +59,69 @@ public class MQOFace implements Serializable {
 			vY[i] = mqo.getVertexs().get(v[i]).getY();
 			vZ[i] = mqo.getVertexs().get(v[i]).getZ();
 		}
-		
-		// cosを求める(影に使う)
-		cos = (float) GPosHelper.getAngle(vX[0], vY[0], vZ[0], vX[1], vY[1], vZ[1], vX[2], vY[2], vZ[2]);
-
-		// この面がどの方向を向いているのかを検証する
-		if (GPosHelper.areSameNumber(vX)) {
-			// X座標がすべて一致している
-			facing = FACING_SIDE_EW;
-		}
-		else if (GPosHelper.areSameNumber(vY)) {
-			// Y座標がすべて一致している
-			facing = FACING_TOP;
-		}
-		else if (GPosHelper.areSameNumber(vZ)) {
-			// Z座標がすべて一致している
-			facing = FACING_SIDE_NS;
-		}
 	}
 
 
 	/**
-	 * この面を実際に描画します。直接OpenGLを使用するので、レンダーメソッドで呼び出す必要があります。そうでない場合の
-	 * チェックは一切しないのでご了承ください。
-	 *
+	 * この面を描画するためのBufferを作成します。直接これを呼び出すのはやめて、Objectから呼び出してください。
+	 *　内部ではbeginもdrawも行いません。
 	 *
 	 * @param color バッファカラーを指定します。0を指定すると自動で陰影をつけますが、真っ黒にしたい場合は妥協して0.0000001とかで。
 	 */
-	public void drawFace(float color) {
-		// Tessellatorを試してみる
-		final Tessellator t = Tessellator.getInstance(); // インスタンスを取得
-
-		// Tessellatorで描画するときは面の向きが逆になる？
-		t.getBuffer().begin((v.length == 3) ? GL11.GL_TRIANGLES : GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
-		for (int i = v.length - 1; i >= 0; i--) {
-			t.getBuffer().pos(mqo.getVertexs().get(v[i]).getX(),
-					mqo.getVertexs().get(v[i]).getY(), mqo.getVertexs().get(v[i]).getZ())
-			.tex(uv.get(i)[0], uv.get(i)[1]);
-			
-
-			
-			if (color != 0.0f) t.getBuffer().color(color, color, color, 1.0f);
-			else if (getDirection() == EnumFacing.UP) t.getBuffer().color(1.0f, 1.0f, 1.0f, 1.0f);
-			else if (getDirection() == EnumFacing.EAST || getDirection() == EnumFacing.WEST || getDirection() == EnumFacing.SOUTH || getDirection() == EnumFacing.NORTH) t.getBuffer().color(0.8f, 0.8f, 0.8f, 1.0f);
-			else if ( getDirection() == EnumFacing.DOWN) t.getBuffer().color(0.5f, 0.5f, 0.5f, 1.0f);
-			else t.getBuffer().color(1.0f, 1.0f, 1.0f, 1.0f);
-			
-			
-			
-			t.getBuffer().endVertex();
+	public void drawFace(BufferBuilder b, float color) {
+		if (v.length == 4) {
+			// 四角形の場合は二回呼び出す（1,2,3 - 3,4,1）
+			set3Vertex(b, color, new MQOVertex[] {mqo.getVertexs().get(v[0]), mqo.getVertexs().get(v[1]), mqo.getVertexs().get(v[2])}, new double[][] {uv.get(0), uv.get(1), uv.get(2)});
+			set3Vertex(b, color, new MQOVertex[] {mqo.getVertexs().get(v[0]), mqo.getVertexs().get(v[2]), mqo.getVertexs().get(v[3])}, new double[][] {uv.get(0), uv.get(2), uv.get(3)});
 		}
-		t.draw();
-
-		// GL11.glEnd(); // 終了
+		else {
+			// 三角形の場合はそのまま呼び出す
+			set3Vertex(b, color, new MQOVertex[] {mqo.getVertexs().get(v[0]), mqo.getVertexs().get(v[1]), mqo.getVertexs().get(v[2])}, new double[][] {uv.get(0), uv.get(1), uv.get(2)});
+		}
 	}
 	
 	/**
-	 * この面が南北東西上下のどちらに向いているかを返しますが、曲面の場合は近似されてしまうため正常に表現できない場合があります。
-	 *
-	 * @return
+	 * ※3つの頂点であるかどうかのチェックはしないので注意
+	 * @param b バッファ
+	 * @param color 色
+	 * @param vertex 頂点
 	 */
-	public EnumFacing getDirection() {
-		// 面の向きを確かめる
-		//System.out.println(Math.acos(cos));
-		return EnumFacing.fromAngle(Math.toDegrees(Math.acos(cos)));
+	private void set3Vertex(BufferBuilder b, float color, MQOVertex[] vertex, double[][] uv) {
+		for (int i = vertex.length - 1; i >= 0; i--) {
+			b.pos(vertex[i].getX(),
+					vertex[i].getY(), vertex[i].getZ())
+					.tex(uv[i][0], uv[i][1]);
+			
+			if (color != 0.0f) b.color(color, color, color, 1.0f);
+			else {
+				// 自動計算を行う
+				float c = (float) getShadowColor();
+				b.color(c, c, c, 1.0f);
+			}
+			
+			b.endVertex();
+		}
+	}
+	
+	private double getShadowColor() {
+		// 4つ以上頂点がある場合はその中から3つ選ぶ。どれ選んでも同じなので前から3つ
+		MQOVertex[] vs = new MQOVertex[3];
+		for (int i = 0; i < 3; i++) {
+			vs[i] = mqo.getVertexs().get(v[i]);
+		}
+		
+		// 単位ベクトルの大きさを返しそのy座標を取得する
+		double y = GMathHelper.getDefaultAreaDirection(vs[0].getX(), vs[0].getY(), vs[0].getZ(), vs[1].getX(), vs[1].getY(), vs[1].getZ(), vs[2].getX(), vs[2].getY(), vs[2].getZ())[1];
+		
+		// Version1の時点ではそこまで凝らない予定なので割愛
+		// Version1.1とかで、太陽の向きに即した角度で影を反映させたい
+		
+		// いくら直射でも全発光はしないはずなのと、影であろうとも反射光が入るはずなので取りえる色の乗算値を0.4～1.0とする
+		// まず-1～1になっているのを0～1に是正する
+		y = (y+1) / 2; // これで補正される
+		y = y * 0.6;
+		y = 0.6 - y;
+		return y + 0.4;
 	}
 	
 

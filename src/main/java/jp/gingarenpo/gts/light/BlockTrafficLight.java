@@ -72,7 +72,7 @@ public class BlockTrafficLight extends BlockContainer {
 	@Nullable
 	@Override
 	public TileEntity createNewTileEntity(World worldIn, int meta) {
-		TileEntityTrafficLight te = new TileEntityTrafficLight(true);
+		TileEntityTrafficLight te = new TileEntityTrafficLight();
 		return te;
 	}
 	
@@ -105,5 +105,8 @@ public class BlockTrafficLight extends BlockContainer {
 			// もし間に合わなかったら、もしくはプレイヤーじゃない別の何かによって置かれたら
 			return;
 		}
+		// 角度情報を入れる
+		EntityPlayer ep = (EntityPlayer) placer;
+		te.setAngle(ep.rotationYawHead);
 	}
 }

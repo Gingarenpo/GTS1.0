@@ -264,7 +264,7 @@ public class TrafficController implements Serializable {
 				return true; // 処理を中止する
 			}
 			// サイクルの終了が確認でき、上記メソッドでサイクルのリセットを行ったため起動サイクル状態を初期化
-			GTS.GTSLog.debug(String.format("<%s> Cycle %s ended", name, now));
+			//GTS.GTSLog.debug(String.format("<%s> Cycle %s ended", name, now));
 			now = null;
 			
 		}
@@ -274,7 +274,7 @@ public class TrafficController implements Serializable {
 			if (cycle.getValue().canStart(world, this, this.detected)) {
 				// サイクルの起動可能な場合はサイクルを起動する
 				now = cycle.getKey();
-				GTS.GTSLog.debug(String.format("<%s> Cycle %s is now started", name, now));
+				//GTS.GTSLog.debug(String.format("<%s> Cycle %s is now started", name, now));
 				break;
 			}
 		}

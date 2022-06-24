@@ -193,7 +193,7 @@ public class Cycle implements Serializable {
 				if (l == null) continue;
 				tl.getData().setLight(l);
 			}
-			GTS.GTSLog.debug(String.format("<%s_%s> Change Phase %s to %s", controller.getName(), this.name, getPhase(nowPhase-1).getName(), getNowPhase().getName()));
+			// GTS.GTSLog.debug(String.format("<%s_%s> Change Phase %s to %s", controller.getName(), this.name, getPhase(nowPhase-1).getName(), getNowPhase().getName()));
 			return true;
 		}
 		return false;
@@ -216,7 +216,7 @@ public class Cycle implements Serializable {
 			if (l == null) continue;
 			tl.getData().setLight(l);
 		}
-		GTS.GTSLog.debug(String.format("<%s_%s> Reset Phase %s to 0", controller.getName(), this.name, getNowPhase().getName()));
+		// GTS.GTSLog.debug(String.format("<%s_%s> Reset Phase %s to 0", controller.getName(), this.name, getNowPhase().getName()));
 		return true;
 	}
 	
