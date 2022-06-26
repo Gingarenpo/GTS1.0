@@ -111,7 +111,7 @@ public class TileEntityTrafficPole extends GTSTileEntity {
 	 */
 	public void setBottom(boolean bottom) {
 		this.bottom = bottom;
-		if (bottom & top) {
+		if (bottom && top) {
 			top = false;
 		}
 	}

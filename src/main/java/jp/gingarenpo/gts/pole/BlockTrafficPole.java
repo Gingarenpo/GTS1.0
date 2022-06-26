@@ -3,6 +3,7 @@ package jp.gingarenpo.gts.pole;
 import jp.gingarenpo.gingacore.helper.GMathHelper;
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -111,32 +112,33 @@ public class BlockTrafficPole extends BlockContainer {
 		
 	}
 	
-	/**
-	 * 近くの（隣接する）ブロックが更新されたときに呼び出される。
-	 * @param world
-	 * @param pos
-	 * @param neighbor
-	 */
 	@Override
-	public void onNeighborChange(IBlockAccess world, BlockPos pos, BlockPos neighbor) {
-		super.onNeighborChange(world, pos, neighbor);
-		TileEntityTrafficPole self = (TileEntityTrafficPole) world.getTileEntity(pos);
+	public void neighborChanged(IBlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos) {
+		TileEntityTrafficPole self = (TileEntityTrafficPole) worldIn.getTileEntity(pos);
 		if (self == null) return;
-		checkStatus((World) world, self, pos);
-		
+		checkStatus(worldIn, self, pos);
 	}
 	
 	private void checkStatus(World world, TileEntityTrafficPole self, BlockPos pos) {
+		if (world.isRemote) return;
 		TileEntity top = world.getTileEntity(pos.up()); // 上部を取得
 		TileEntity down = world.getTileEntity(pos.down()); // 下部を取得
+		System.out.println(top);
+		System.out.println(down);
 		if (top == null && down == null) self.setBottom(true); // 単独の場合は下部扱いとする
-		if (top instanceof TileEntityTrafficPole && !(down instanceof  TileEntityTrafficPole)) {
+		else if (top instanceof TileEntityTrafficPole && !(down instanceof TileEntityTrafficPole)) {
 			// 上につながっているだけなので下部扱いとする
 			self.setBottom(true);
 		}
-		if (down instanceof TileEntityTrafficPole && !(top instanceof  TileEntityTrafficPole)) {
+		else if (down instanceof TileEntityTrafficPole && !(top instanceof TileEntityTrafficPole)) {
 			// 下につながっているだけなので上部扱いとする
 			self.setTop(true);
 		}
+		else {
+			// 中間扱い
+			self.setTop(false);
+			self.setBottom(false);
+		}
+		world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
 	}
  }
