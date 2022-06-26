@@ -1,5 +1,8 @@
-package jp.gingarenpo.gts.data;
+package jp.gingarenpo.gts.pack;
 
+
+import jp.gingarenpo.gts.core.ModelBase;
+import jp.gingarenpo.gts.light.ModelTrafficLight;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -11,11 +14,11 @@ public class Pack {
 	
 	private String name; // GTS.txtで記載があればリストにこの名前が表示されたりする
 	private String credit; // こちらもGTS.txt
-	private ArrayList<Model> models = new ArrayList<Model>(); // モデルセット
+	private ArrayList<ModelBase> models; // モデルセット
 	private File location; // ファイルの場所
 	
 	
-	public Pack(String name, String credit, ArrayList<Model> models, File location) {
+	public Pack(String name, String credit, ArrayList<ModelBase> models, File location) {
 		this.name = name;
 		this.credit = credit;
 		this.models = models;
@@ -39,7 +42,7 @@ public class Pack {
 		this.credit = credit;
 	}
 	
-	public ArrayList<Model> getModels() {
+	public ArrayList<ModelBase> getModels() {
 		return models;
 	}
 	
@@ -56,15 +59,15 @@ public class Pack {
 	 * @param id
 	 * @return
 	 */
-	public Model getModel(String id) {
-		for (Model model: models) {
+	public ModelBase getModel(String id) {
+		for (ModelBase model: models) {
 			// アドオンのモデルの中からコンフィグデータを読み込みidと一致するものを返す
 			if (model.getConfig().getId().equals(id)) return model;
 		}
 		return null;
 	}
 	
-	public void setModels(ArrayList<Model> models) {
+	public void setModels(ArrayList<ModelBase> models) {
 		this.models = models;
 	}
 }

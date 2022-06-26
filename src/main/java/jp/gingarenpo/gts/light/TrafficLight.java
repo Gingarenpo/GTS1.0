@@ -1,8 +1,5 @@
 package jp.gingarenpo.gts.light;
 
-import jp.gingarenpo.gts.controller.TrafficController;
-import jp.gingarenpo.gts.data.ConfigBase;
-
 import java.io.Serializable;
 
 /**
@@ -22,7 +19,7 @@ public class TrafficLight implements Serializable {
 	/**
 	 * 現時点での交通信号機の点灯するオブジェクト。レンダーから呼び出す際に使用する。
 	 */
-	private ConfigBase.LightObject light;
+	private ConfigTrafficLight.LightObject light;
 	
 	/**
 	 * 更新の必要性があるかどうかのフラグ。
@@ -31,7 +28,7 @@ public class TrafficLight implements Serializable {
 	
 	
 	public TrafficLight() {
-		light = new ConfigBase.LightObject().setName("DUMMY"); // とりあえずダミーのライトを入れてNullを回避する
+		light = new ConfigTrafficLight.LightObject().setName("DUMMY"); // とりあえずダミーのライトを入れてNullを回避する
 	}
 	
 	public TrafficLight(int signal) {
@@ -46,12 +43,12 @@ public class TrafficLight implements Serializable {
 		this.signal = signal;
 	}
 	
-	public void setLight(ConfigBase.LightObject light) {
+	public void setLight(ConfigTrafficLight.LightObject light) {
 		this.light = light;
 		this.notifyUpdate();
 	}
 	
-	public ConfigBase.LightObject getLight() {
+	public ConfigTrafficLight.LightObject getLight() {
 		return this.light;
 	}
 	

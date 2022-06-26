@@ -1,0 +1,19 @@
+{
+	"variants": {
+		"normal": {
+			"model": "gts:pole"
+		},
+		"facing=west": {
+			"model": "gts:pole"
+		},
+		"facing=east": {
+			"model": "gts:pole"
+		},
+		"facing=north": {
+			"model": "gts:pole"
+		},
+		"facing=south": {
+			"model": "gts:pole"
+		}
+	}
+}

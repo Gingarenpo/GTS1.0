@@ -24,7 +24,7 @@ public class MQOVertex implements Serializable {
 		final String[] v = vnum.split(" "); // 分割して…
 		//System.out.println("Vertex["+v.length+"]");
 		if (v.length != 3) // MQOとして不適切
-			throw mqo.getParent().new MQOException("Illegal Vertex Position!!");
+			throw new MQO.MQOException("Illegal Vertex Position!!");
 
 		// 代入していく
 		x = Double.parseDouble(v[0]);

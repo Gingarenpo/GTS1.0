@@ -4,12 +4,15 @@ import jp.gingarenpo.gts.controller.BlockTrafficController;
 import jp.gingarenpo.gts.controller.PacketTrafficController;
 import jp.gingarenpo.gts.controller.TileEntityTrafficController;
 import jp.gingarenpo.gts.core.GTSGUIHandler;
-import jp.gingarenpo.gts.data.Loader;
+import jp.gingarenpo.gts.pack.Loader;
 import jp.gingarenpo.gts.event.GTSWorldEvent;
 import jp.gingarenpo.gts.light.BlockTrafficLight;
 import jp.gingarenpo.gts.light.PacketTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import jp.gingarenpo.gts.minecraft.GTSSavedData;
+import jp.gingarenpo.gts.pole.BlockTrafficPole;
+import jp.gingarenpo.gts.pole.PacketTrafficPole;
+import jp.gingarenpo.gts.pole.TileEntityTrafficPole;
 import jp.gingarenpo.gts.proxy.GTSProxy;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -17,7 +20,6 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Config;
@@ -145,6 +147,7 @@ public class GTS {
 		// TileEntityの登録（非推奨になっているけどこれで登録できるので）
 		GameRegistry.registerTileEntity(TileEntityTrafficController.class, "control");
 		GameRegistry.registerTileEntity(TileEntityTrafficLight.class, "light");
+		GameRegistry.registerTileEntity(TileEntityTrafficPole.class, "pole");
 		
 		// GUIの登録
 		NetworkRegistry.INSTANCE.registerGuiHandler(GTS.INSTANCE, new GTSGUIHandler()); // GUI
@@ -184,6 +187,7 @@ public class GTS {
 	public static class Blocks {
 		public static final Block control = null; // 制御機
 		public static final Block light = null; // 信号機
+		public static final Block pole = null; // ポール
 	}
 	
 	/**
@@ -196,6 +200,7 @@ public class GTS {
 	public static class Items {
       	public static final ItemBlock control = (ItemBlock) new ItemBlock(Blocks.control).setRegistryName(Blocks.control.getRegistryName()); // 制御機のドロップ扱い
 		public static final ItemBlock light = (ItemBlock) new ItemBlock(Blocks.light).setRegistryName(Blocks.light.getRegistryName()); // 信号機のドロップ扱い
+		public static final ItemBlock pole = (ItemBlock) new ItemBlock(Blocks.pole).setRegistryName(Blocks.pole.getRegistryName()); // 信号機のドロップ扱い
 	}
 	
 	/**
@@ -212,7 +217,8 @@ public class GTS {
 		public static void addItems(RegistryEvent.Register<Item> event) {
 			event.getRegistry().registerAll(
 					new ItemBlock(Blocks.control).setRegistryName(Blocks.control.getRegistryName()),
-					new ItemBlock(Blocks.light).setRegistryName(Blocks.light.getRegistryName())
+					new ItemBlock(Blocks.light).setRegistryName(Blocks.light.getRegistryName()),
+					new ItemBlock(Blocks.pole).setRegistryName(Blocks.pole.getRegistryName())
 			);
 		}
 		
@@ -223,7 +229,8 @@ public class GTS {
 		public static void addBlocks(RegistryEvent.Register<Block> event) {
 			event.getRegistry().registerAll(
 					new BlockTrafficLight(),
-					new BlockTrafficController()
+					new BlockTrafficController(),
+					new BlockTrafficPole()
 			); // ブロックを実際に登録
 		}
 		
@@ -247,6 +254,7 @@ public class GTS {
 			// パケットを登録する
 			GTSPacket.registerPacket(PacketTrafficController.class, PacketTrafficController.class, Side.SERVER);
 			GTSPacket.registerPacket(PacketTrafficLight.class, PacketTrafficLight.class, Side.SERVER);
+			GTSPacket.registerPacket(PacketTrafficPole.class, PacketTrafficPole.class, Side.SERVER);
 		}
 		
 		/**

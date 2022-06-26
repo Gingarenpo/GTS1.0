@@ -46,7 +46,7 @@ public class RendererTrafficController extends TileEntitySpecialRenderer<TileEnt
 		
 		// レンダリング開始
 		GL11.glPushMatrix(); // 現在の行列情報をスタックに押し込む。これで自由に弄ってもここから戻せば元通り！
-		GL11.glTranslated(x + 0.5, y, z + 0.5); // ブロックの原点を描画対象の座標に移動させる（ただしMQOの性質上原点を中心に移動させる）
+		GL11.glTranslated(x + 0.5f, y, z + 0.5f); // ブロックの原点を描画対象の座標に移動させる（ただしMQOの性質上原点を中心に移動させる）
 		GlStateManager.shadeModel(GL11.GL_SMOOTH); // スムージング
 		
 		Tessellator t = Tessellator.getInstance();

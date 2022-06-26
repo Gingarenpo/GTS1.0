@@ -1,4 +1,6 @@
-package jp.gingarenpo.gts.data;
+package jp.gingarenpo.gts.core;
+
+import jp.gingarenpo.gts.light.ConfigTrafficLight;
 
 import java.util.ArrayList;
 
@@ -13,7 +15,7 @@ import java.util.ArrayList;
  *
  * あとこれ信号機のみの対応なので。仕様変更されたら終わり・・・
  */
-public class RTMConfig {
+public class ConfigRTM {
 
 	private String signalName; // 紐づけ: ID
 	private String signalModel; // 紐づけ: モデル（mqoじゃないとダメだけど）
@@ -37,7 +39,7 @@ public class RTMConfig {
 	 * @return ※現在はnullしか返さないので意味がありません
 	 * @deprecated 使わないでね
 	 */
-	public static RTMConfig GTS2RTM(ConfigBase gts) {
+	public static ConfigRTM GTS2RTM(ConfigTrafficLight gts) {
 		return null;
 	}
 	
@@ -46,8 +48,8 @@ public class RTMConfig {
 	 * 途中で値がおかしい場合など、何らかのエラーが発生した場合はnullを返す。
 	 * @return GTSのコンフィグに変換した結果。正常に変換できなかった場合はnullを返す
 	 */
-	public ConfigBase RTM2GTS() {
-		ConfigBase res = null;
+	public ConfigTrafficLight RTM2GTS() {
+		ConfigTrafficLight res = null;
 		
 		// まず値チェック（だけど今は特にない）
 		// サイクルパターン変換

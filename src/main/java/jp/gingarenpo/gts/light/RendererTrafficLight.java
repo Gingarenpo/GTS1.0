@@ -1,9 +1,6 @@
 package jp.gingarenpo.gts.light;
 
-import jp.gingarenpo.gingacore.mqo.MQOFace;
 import jp.gingarenpo.gingacore.mqo.MQOObject;
-import jp.gingarenpo.gts.data.ConfigBase;
-import jp.gingarenpo.gts.data.Model;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -13,13 +10,8 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.pipeline.LightUtil;
-import org.lwjgl.opengl.ARBFragmentShader;
-import org.lwjgl.opengl.ARBVertexShader;
 import org.lwjgl.opengl.GL11;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -46,12 +38,12 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 	@Override
 	public void render(TileEntityTrafficLight te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
 		super.render(te, x, y, z, partialTicks, destroyStage, alpha); // 一応
-		long time = System.currentTimeMillis();
+		// long time = System.currentTimeMillis();
 
 		
 		if (te.getAddon() == null) return; // アドオンがまだ読み込まれていない場合（ダミーでも）は抜ける
-		Model addon = te.getAddon(); // Nullでないことが保証される
-		ConfigBase config = addon.getConfig(); // これがnullになることはまずない
+		ModelTrafficLight addon = te.getAddon(); // Nullでないことが保証される
+		ConfigTrafficLight config = addon.getConfig(); // これがnullになることはまずない
 		
 		
 		// リソースチェック
@@ -69,7 +61,7 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		}
 		
 		// サイクルチェック
-		ConfigBase.LightObject lightObject = null; // 現在光っているオブジェクトを格納
+		ConfigTrafficLight.LightObject lightObject = null; // 現在光っているオブジェクトを格納
 		if (te.getData().getLight() != null) {
 			// 制御機の情報がまだ入っていない場合や入っていてもサイクルが設定されていない場合はとりあえず何もしない
 			// つまりここに来たら必ずサイクルがあり、今光っているものがあるはず
@@ -81,9 +73,12 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		
 		// OpenGL準備
 		GL11.glPushMatrix(); // 現在の行列情報をスタックに押し込む。これで自由に弄ってもここから戻せば元通り！
-		GL11.glTranslated(x, y, z);
-		GL11.glRotated(te.getAngle(), 0, 1, 0); // 回転させる
-		GL11.glTranslated(0.5, 0.5, 0); // ブロックの原点を描画対象の座標に移動させる（ただしMQOの性質上原点を中心に移動させる）
+		
+		GL11.glTranslated(x + 0.5 + te.getAddon().getConfig().getCenterPositionX() * Math.cos(te.getAngle()) + te.getAddon().getConfig().getCenterPositionZ() * Math.sin(te.getAngle()),
+				y + 0.5 + te.getAddon().getConfig().getCenterPositionY(),
+				z + 0.5 + te.getAddon().getConfig().getCenterPositionZ() * Math.cos(te.getAngle()) + te.getAddon().getConfig().getCenterPositionX() * Math.sin(te.getAngle()));
+		GL11.glRotated(te.getAngle(), 0f, 1f, 0f); // 回転させる
+		
 		
 		GlStateManager.shadeModel(GL11.GL_SMOOTH);
 		GlStateManager.disableLighting();
@@ -96,7 +91,6 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		// オブジェクト毎にループ
 		for (MQOObject o: addon.getModel().getObjects4Loop()) {
 			boolean render = false;
-			boolean light = false; // 光るかどうか
 			boolean nolight = false; // 光らないかどうか
 			// オブジェクト毎に繰り返す
 			if (config.getBody().contains(o.getName())) {
@@ -106,15 +100,12 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 			}
 			else {
 				// ライティングが必要な場合はちょっと変わる
-				for (ConfigBase.LightObject l : config.getPatterns()) {
+				for (ConfigTrafficLight.LightObject l : config.getPatterns()) {
 					// 一致しない場合はスルー
 					if (!l.equals(lightObject)) continue;
 					// 発光するかしないかを指定（存在するかどうかで決める）
 					if (Objects.equals(l, lightObject) && l.getObjects().contains(o.getName())) {
-						// 発光オブジェクト確定
-						this.bindTexture(lightTex);
-						light = true;
-						render = true;
+						continue;
 					}
 					else if (te.getAddon().getConfig().getLight().contains(o.getName())) {
 						// 未発光オブジェクト確定
@@ -135,20 +126,56 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 			
 			
 			// 実際に描画
-			float color = nolight ? 0.1f : (light ? 1.0f : 0.0f);
+			float color = nolight ? 0.1f : 0.0f;
+			o.draw(t.getBuffer(), color);
+			
+		}
+		
+		t.draw(); // ベース部分を描画
+		t.getBuffer().begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_COLOR);
+		
+		for (MQOObject o: addon.getModel().getObjects4Loop()) {
+			boolean render = false;
+			// オブジェクト毎に繰り返す
+			if (!config.getBody().contains(o.getName())) {
+				// ライティングが必要な場合
+				for (ConfigTrafficLight.LightObject l : config.getPatterns()) {
+					// 一致しない場合はスルー
+					if (!l.equals(lightObject)) continue;
+					// 発光するかしないかを指定（存在するかどうかで決める）
+					if (Objects.equals(l, lightObject) && l.getObjects().contains(o.getName())) {
+						// 発光オブジェクト確定
+						this.bindTexture(lightTex);
+						render = true;
+					}
+					
+				}
+			}
+			
+			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f); // 最高の明るさ
+			
+			if (!render) {
+				// 描画の必要性がない場合
+				continue;
+			}
+			
+			
+			// 実際に描画
+			float color = 1.0f;
 			o.draw(t.getBuffer(), color);
 			
 			
 		}
 		
-		t.draw(); // 描画
+		t.draw(); // ライト部分を描画
 		
 		// 後片付け
+		RenderHelper.enableStandardItemLighting();
 		GlStateManager.enableLighting();
 		GlStateManager.shadeModel(GL11.GL_FLAT);
 		GL11.glPopMatrix();
 		
-		System.out.println((System.currentTimeMillis() - time) + "ms");
+		// System.out.println((System.currentTimeMillis() - time) + "ms"); // レンダリング性能計測用
 	}
 	
 	

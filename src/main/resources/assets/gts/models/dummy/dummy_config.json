@@ -54,5 +54,10 @@
     }
   ],
   "showBoth": true,
-  "size": 1.5
+  "size": 1.5,
+  "centerPosition": [
+    0,
+    0,
+    0
+  ]
 }

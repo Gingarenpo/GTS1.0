@@ -72,4 +72,20 @@ public class GMathHelper {
 		return res;
 		
 	}
+	
+	/**
+	 * Minecraft標準のMathHelperは整数にしか対応していないのでdoubleに対応するように自前で作成しました。
+	 * 正規化してアングルを0～360の間のどこかで返します。
+	 * @param angle 角度
+	 * @return 0～360に正規化された値
+	 */
+	public static double normalizeAngle(double angle) {
+		if (angle < 0) {
+			angle = Math.abs(angle); // 一旦正の数にして
+			return angle > 360 ? (360 - (angle % 360.0)) : 360 - angle;
+		}
+		else {
+			return angle > 360 ? angle % 360.0 : angle;
+		}
+	}
 }

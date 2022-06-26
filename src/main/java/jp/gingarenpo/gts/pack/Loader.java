@@ -1,10 +1,16 @@
-package jp.gingarenpo.gts.data;
+package jp.gingarenpo.gts.pack;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
+import jp.gingarenpo.gts.core.ConfigBase;
+import jp.gingarenpo.gts.core.ModelBase;
+import jp.gingarenpo.gts.light.ConfigTrafficLight;
+import jp.gingarenpo.gts.light.ModelTrafficLight;
+import jp.gingarenpo.gts.pole.ConfigTrafficPole;
+import jp.gingarenpo.gts.pole.ModelTrafficPole;
 import org.apache.logging.log4j.Level;
 
 import javax.imageio.ImageIO;
@@ -24,6 +30,7 @@ import java.util.zip.ZipInputStream;
 public class Loader {
 	
 	private HashMap<File, Pack> packs = new HashMap<>(); // パックの存在場所を示すもの。必ず存在する（ゲーム開始時点では）
+	private HashMap<File, HashMap<String, BufferedImage>> textures = new HashMap<>(); // テクスチャの存在を示すもの
 	
 	public Loader() {
 		// 基本的にインスタンスを使うってよりはパックを保持するためだけなのでここでの記載なし
@@ -35,6 +42,27 @@ public class Loader {
 	 */
 	public HashMap<File, Pack> getPacks() {
 		return packs;
+	}
+	
+	/**
+	 * 現在読み込まれているテクスチャのリストを返す。
+	 * @return テクスチャリスト
+	 */
+	public HashMap<File, HashMap<String, BufferedImage>> getTextures() {
+		return textures;
+	}
+	
+	/**
+	 * 指定したパックの指定したテクスチャを返す。なければnullを返す。
+	 * @param pack 入っているパック。
+	 * @param location 入っている場所。
+	 * @return テクスチャ、なければnull
+	 */
+	public BufferedImage getTexture(File pack, String location) {
+		if (!textures.containsKey(pack)) {
+			return null;
+		}
+		return textures.get(pack).get(location);
 	}
 	
 	/**
@@ -107,14 +135,24 @@ public class Loader {
 							byte[] tmp = new byte[Math.toIntExact(entry.getSize())];
 							zis.read(tmp);
 							baos.write(tmp); // こうしないとJacksonがZipストリームを閉じてしまう
-							ConfigBase c = om.readValue(new ByteArrayInputStream(baos.toByteArray()), ConfigBase.class); // コンフィグとして読み込みを試みる
+							ConfigTrafficLight c = om.readValue(new ByteArrayInputStream(baos.toByteArray()), ConfigTrafficLight.class); // コンフィグとして読み込みを試みる
 							configs.add(c); // 追加
 						} catch (JsonParseException e) {
 							// そもそもJSONとして不適切な場合
 							GTS.GTSLog.log(Level.WARN, entry.getName() + " is not a JSON File. It was skipped. -> " + e.getMessage() );
 						} catch (JsonMappingException e) {
 							// JSONに適切にマッピングできなかった場合
-							GTS.GTSLog.log(Level.WARN, entry.getName() + " is not a available GTS Pack Config. It was skipped. -> " + e.getMessage() );
+							// ポールでやってみる
+							try (ByteArrayOutputStream baos = new ByteArrayOutputStream(Math.toIntExact(entry.getSize()))) {
+								byte[] tmp = new byte[Math.toIntExact(entry.getSize())];
+								zis.read(tmp);
+								baos.write(tmp); // こうしないとJacksonがZipストリームを閉じてしまう
+								ConfigTrafficPole c = om.readValue(new ByteArrayInputStream(baos.toByteArray()), ConfigTrafficPole.class);
+								configs.add(c);
+							} catch (JsonMappingException e2) {
+								// それでもダメな場合
+								GTS.GTSLog.log(Level.WARN, entry.getName() + " is not a available GTS Pack Config. It was skipped. -> " + e.getMessage() );
+							}
 						} catch (Exception e) {
 							// なんかそれ以外のエラーが発生した場合
 							GTS.GTSLog.log(Level.WARN, "Can't load " + entry.getName() + " some reason. -> " + e.getMessage() );
@@ -144,36 +182,57 @@ public class Loader {
 				}
 				
 				// 各種コンフィグに対して処理を追加する
-				ArrayList<Model> m = new ArrayList<>(); // 正常に追加したパックモデル
-				for (ConfigBase config : configs) {
-					if (!models.containsKey(config.getModel())) {
+				ArrayList<ModelBase> m = new ArrayList<>(); // 正常に追加したパックモデル
+				for (ConfigBase configBase : configs) {
+					if (!models.containsKey(configBase.getModel())) {
 						// モデルが存在しない場合（そもそもこのパックは使用不可）
-						GTS.GTSLog.log(Level.WARN, config.getId() + " declared model as " + config.getModel() + ", but it is not found or broken. This model was skipped.");
+						GTS.GTSLog.log(Level.WARN, configBase.getId() + " declared model as " + configBase.getModel() + ", but it is not found or broken. This model was skipped.");
 						continue;
 					}
-					if (!textures.containsKey(config.getTextures().getBase())) {
-						// ベースのテクスチャが存在しない場合（そもそもこのパックは使用不可)
-						GTS.GTSLog.log(Level.WARN, config.getId() + " declared Base Texture as " + config.getTextures().getBase() + ", but it is not found or broken. This model was skipped.");
-						continue;
+					if (configBase instanceof ConfigTrafficLight) {
+						ConfigTrafficLight config = (ConfigTrafficLight) configBase;
+						if (!textures.containsKey(config.getTextures().getBase())) {
+							// ベースのテクスチャが存在しない場合（そもそもこのパックは使用不可)
+							GTS.GTSLog.log(Level.WARN, config.getId() + " declared Base Texture as " + config.getTextures().getBase() + ", but it is not found or broken. This model was skipped.");
+							continue;
+						}
+						if (config.getTextures().getLight() == null || !textures.containsKey(config.getTextures().getLight())) {
+							// 発光テクスチャが存在しない場合
+							GTS.GTSLog.log(Level.WARN, config.getId() + "'s light texture will set " + config.getTextures().getBase());
+							config.getTextures().setLight(config.getTextures().getBase()); // 基本画像を使用する
+						}
+						if (config.getTextures().getNoLight() == null || !textures.containsKey(config.getTextures().getNoLight())) {
+							// 未発光テクスチャが存在しない場合
+							GTS.GTSLog.log(Level.WARN, config.getId() + "'s nolight texture will set " + config.getTextures().getLight());
+							config.getTextures().setNoLight(config.getTextures().getLight()); // 発光画像を使用する（発光画像もない場合は既にベース画像が使用されることになっている）
+						}
+						
+						// テクスチャをそれぞれ読み込む
+						ConfigTrafficLight.TexturePath t = config.getTextures(); // もうめんどくさいので一回読み込み
+						t.setBaseTex(textures.get(t.getBase()));
+						t.setLightTex(textures.get(t.getLight()));
+						t.setNoLightTex(textures.get(t.getNoLight())); // 以上、テクスチャのセット
+						
+						m.add(new ModelTrafficLight(config, models.get(config.getModel()))); // モデルは絶対にあるはずなので
 					}
-					if (config.getTextures().getLight() == null || !textures.containsKey(config.getTextures().getLight())) {
-						// 発光テクスチャが存在しない場合
-						GTS.GTSLog.log(Level.WARN, config.getId() + "'s light texture will set " + config.getTextures().getBase());
-						config.getTextures().setLight(config.getTextures().getBase()); // 基本画像を使用する
-					}
-					if (config.getTextures().getNoLight() == null || !textures.containsKey(config.getTextures().getNoLight())) {
-						// 未発光テクスチャが存在しない場合
-						GTS.GTSLog.log(Level.WARN, config.getId() + "'s nolight texture will set " + config.getTextures().getLight());
-						config.getTextures().setNoLight(config.getTextures().getLight()); // 発光画像を使用する（発光画像もない場合は既にベース画像が使用されることになっている）
+					else if (configBase instanceof ConfigTrafficPole) {
+						ConfigTrafficPole config = (ConfigTrafficPole) configBase;
+						if (config.getTexture() == null) {
+							GTS.GTSLog.log(Level.WARN, config.getId() + " didn't declare Texture. This model was skipped.");
+							continue;
+						}
+						
+						if (!textures.containsKey(config.getTexture())) {
+							// テクスチャが存在しない
+							GTS.GTSLog.warn(config.getId() + " is not found in this pack. This model was skipped.");
+						}
+						
+						config.setTexImage(textures.get(config.getTexture()));
+						m.add(new ModelTrafficPole(config, models.get(config.getModel())));
+						
 					}
 					
-					// テクスチャをそれぞれ読み込む
-					ConfigBase.TexturePath t = config.getTextures(); // もうめんどくさいので一回読み込み
-					t.setBaseTex(textures.get(t.getBase()));
-					t.setLightTex(textures.get(t.getLight()));
-					t.setNoLightTex(textures.get(t.getNoLight())); // 以上、テクスチャのセット
 					
-					m.add(new Model(config, models.get(config.getModel()))); // モデルは絶対にあるはずなので
 					
 				}
 				
@@ -186,6 +245,8 @@ public class Loader {
 			e.printStackTrace();
 			return null;
 		}
+		
+		this.textures.put(pack, textures);
 		
 		return res;
 	}

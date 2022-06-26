@@ -5,6 +5,8 @@ import jp.gingarenpo.gts.controller.RendererTrafficController;
 import jp.gingarenpo.gts.controller.TileEntityTrafficController;
 import jp.gingarenpo.gts.light.RendererTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
+import jp.gingarenpo.gts.pole.RendererTrafficPole;
+import jp.gingarenpo.gts.pole.TileEntityTrafficPole;
 import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
@@ -23,6 +25,7 @@ public class GTSProxy {
 	public void registerItemModels() {
 		setCustomModelResourceLocation(GTS.Items.control, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "control"), "inventory"));
 		setCustomModelResourceLocation(GTS.Items.light, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "light"), "inventory"));
+		setCustomModelResourceLocation(GTS.Items.pole, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "pole"), "inventory"));
 		
 	}
 	
@@ -32,5 +35,6 @@ public class GTSProxy {
 	public void registerTESRs() {
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityTrafficController.class, new RendererTrafficController());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityTrafficLight.class, new RendererTrafficLight());
+		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityTrafficPole.class, new RendererTrafficPole());
 	}
 }

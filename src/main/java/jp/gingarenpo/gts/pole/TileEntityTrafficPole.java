@@ -1,4 +1,4 @@
-package jp.gingarenpo.gts.light;
+package jp.gingarenpo.gts.pole;
 
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
@@ -7,7 +7,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
-import net.minecraft.util.ITickable;
 import net.minecraft.util.ResourceLocation;
 import org.apache.logging.log4j.Level;
 
@@ -15,60 +14,107 @@ import javax.annotation.Nullable;
 import java.io.*;
 
 /**
- * 交通信号機（受信機）のTileEntity情報。
- * 動的ﾃｸｽﾁｬをとにかく大量に生成するためメモリ不足で落ちるかもしれない
+ * 電柱（ポール）のTileEntity。Version1現在ではあまり意味をなさないが、
+ * 将来的に可変的な対応をできるようにする予定。
+ *
+ * 現在はポールのモデルのみを格納する。
  */
-public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, Serializable {
-	
-	private ModelTrafficLight addon = null; // この信号機が一体どの種類のモデルを使うのか。基本的に必ず何かしらが入るはず
-	private TrafficLight data = null; // この信号機のデータ
-	private double angle = 0.0f; // 設置された向き（角度）
-	
+public class TileEntityTrafficPole extends GTSTileEntity {
 	
 	/**
-	 * true入れようがfalse入れようがダミーが入る
-	 *
+	 * ポールのアドオンクラス。
 	 */
-	public TileEntityTrafficLight() {
-		setDummyModel();
-		setData(new TrafficLight(1));
+	private ModelTrafficPole addon;
+	
+	/**
+	 * このポールは先頭かどうか
+	 */
+	private boolean top = false;
+	
+	/**
+	 * このポールは土台かどうか
+	 */
+	private boolean bottom = false;
+	
+	/**
+	 * このポールのダイナミックテクスチャ格納場所
+	 */
+	private ResourceLocation texture;
+	
+	/**
+	 * パックのある場所（ロケーション）。これがないとパックを読み出せない
+	 */
+	private File packLocation;
+	
+	public ResourceLocation getTexture() {
+		return texture;
 	}
 	
-
-	/**
-	 * このモデルに対してパックが指定されていないときや、何らかのエラーでモデルが表示できない場合は
-	 * 代わりに備え付けのダミーモデルを指定する。RTMでも謎の信号機が設置されることがあったと思うが
-	 * あれみたいなもの。あくまで設置したんだよっていうのが分かるように。
-	 *
-	 * 普通ありえないがファイルが見つからない場合は例外出しまくるので判断してください。
-	 */
-	private void setDummyModel() {
+	public void setTexture(ResourceLocation texture) {
+		this.texture = texture;
+	}
+	
+	public TileEntityTrafficPole() {
+		// ダミーのコンフィグを入れる
+		setDummyModel();
+	}
+	
+	public void setDummyModel() {
 		try {
-			DummyConfigTrafficLight config = new DummyConfigTrafficLight();
-			addon = new ModelTrafficLight(config, new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/dummy/dummy_tl.mqo")).getInputStream()));
+			this.addon = (new ModelTrafficPole(new DummyConfigTrafficPole(), new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/dummy/dummy_tp.mqo")).getInputStream())));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		this.markDirty();
 	}
 	
-	
-	
-	public ModelTrafficLight getAddon() {
+	public ModelTrafficPole getAddon() {
 		return addon;
 	}
 	
-	public void setAddon(ModelTrafficLight addon) {
+	public void setAddon(ModelTrafficPole addon) {
 		this.addon = addon;
 	}
 	
-	public TrafficLight getData() {
-		return data;
+	public boolean isTop() {
+		return top;
 	}
 	
-	public void setData(TrafficLight data) {
-		this.data = data;
+	public File getPackLocation() {
+		return packLocation;
 	}
 	
+	public void setPackLocation(File packLocation) {
+		this.packLocation = packLocation;
+	}
+	
+	/**
+	 * bottomと排他的となるため、ここで指定されたものがtrueで一緒になる場合
+	 * 自動的にbottomはfalseになる。
+	 * @param top 上部かどうか。
+	 */
+	public void setTop(boolean top) {
+		this.top = top;
+		if (top && bottom) {
+			bottom = false;
+		}
+	}
+	
+	public boolean isBottom() {
+		return bottom;
+	}
+	
+	/**
+	 * topと排他的となるため、ここで指定されたものがtrueで一緒になる場合
+	 * 自動的にtopはfalseになる。
+	 * @param bottom 下部かどうか。
+	 */
+	public void setBottom(boolean bottom) {
+		this.bottom = bottom;
+		if (bottom & top) {
+			top = false;
+		}
+	}
 	
 	/**
 	 * NBTタグから情報を取り出し、このTileEntityに保管する。
@@ -77,46 +123,41 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 	@Override
 	public void readFromNBT(NBTTagCompound compound) {
 		super.readFromNBT(compound);
-		
-		// Model、Dataの順で格納されている（バイト列）
-		byte[] byteData = compound.getByteArray("gts_tl_data");
-		
-		try (ByteArrayInputStream bais = new ByteArrayInputStream(byteData)) {
+		try (ByteArrayInputStream bais = new ByteArrayInputStream(compound.getByteArray("gts_tp_addon"))) {
 			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
-				this.data = (TrafficLight) ois.readObject();
+				this.addon = (ModelTrafficPole) ois.readObject();
 			}
 		} catch (IOException | ClassNotFoundException e) {
 			// メモリ不足などでストリームを確保できなかった場合、あるいはオブジェクトが正しく読み込まれなかった時
-			GTS.GTSLog.log(Level.DEBUG, "Can't load data object Phase1[model](Maybe out of memory or data == null) -> " + e.getMessage());
+			GTS.GTSLog.log(Level.DEBUG, "Can't load addon object (Maybe out of memory or data == null) -> " + e.getMessage());
 		}
+		top = compound.getBoolean("gts_tp_top");
+		bottom = compound.getBoolean("gts_tp_bottom");
+		packLocation = compound.getString("gts_tp_pl").isEmpty() ? null : new File(compound.getString("gts_tp_pl"));
 		
-		if (compound.hasKey("gts_tl_angle")) {
-			this.angle = compound.getDouble("gts_tl_angle");
-		}
+		
 	}
 	
 	@Override
 	public NBTTagCompound writeToNBT(NBTTagCompound compound) {
 		NBTTagCompound c = super.writeToNBT(compound); // デフォルトの情報（XYZとか）を書き込んでもらう
-		
+		c.setBoolean("gts_tp_top", top);
+		c.setBoolean("gts_tp_bottom", bottom);
+		c.setString("gts_tp_pl", (packLocation == null) ? "" : packLocation.getAbsolutePath());
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-				oos.writeObject(this.data); // アドオンの情報を書き込む
-				c.setByteArray("gts_tl_data", baos.toByteArray()); // バイト列にしてタグに書き込み
+				oos.writeObject(this.addon); // アドオンの情報を書き込む
+				c.setByteArray("gts_tp_addon", baos.toByteArray()); // バイト列にしてタグに書き込み
 			}
 		} catch (IOException e) {
 			// メモリ不足などでストリームを確保できなかった場合
-			GTS.GTSLog.log(Level.ERROR, "Can't write data object Phase2[Data](Maybe out of memory) -> " + e.getMessage());
+			GTS.GTSLog.log(Level.ERROR, "Can't write addon object(Maybe out of memory) -> " + e.getMessage());
 		}
-		
-		compound.setDouble("gts_tl_angle", this.angle);
-		
 		
 		return c;
 		
-		
 	}
-
+	
 	
 	/**
 	 * サーバーからクライアントに同期させるために必要な更新パケットを取得する。
@@ -165,23 +206,11 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 		
 	}
 	
-	
-	/**
-	 * アタッチ制御機を見に行くのではなく自機の信号機インスタンスを読みだして処理を行う
-	 */
 	@Override
-	public void update() {
-		if (this.data.isUpdate()) {
-			world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
-			this.data.doneUpdate();
-		}
-	}
-	
-	public double getAngle() {
-		return angle;
-	}
-	
-	public void setAngle(double angle) {
-		this.angle = angle;
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("addon = ").append(addon).append(". ");
+		sb.append(top ? "It's top." : (bottom ? "It's bottom." : "It's base."));
+		return sb.toString();
 	}
 }

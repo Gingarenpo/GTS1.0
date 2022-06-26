@@ -1,7 +1,8 @@
-package jp.gingarenpo.gts.light;
+package jp.gingarenpo.gts.pole;
 
 import jp.gingarenpo.gingacore.helper.GMathHelper;
 import jp.gingarenpo.gts.GTS;
+import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -12,26 +13,28 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
 
 /**
- * 交通信号機（灯器）を追加するためのブロック。
- * 車灯、歩灯ともに同じインスタンスを使用する。鉄道信号は未対応なのでRTMでどうにかして。
+ * 交通信号機の設置に使われるポールのブロック。基本的に1ブロックにつき1つのTileEntityを配置するが
+ * 重くなったりするので将来的には可変の長さをできるようにしたいところ。
+ *
+ * ポール固有の設定とかもあるので注意！
+ * RTMはポールとアームが一体化していたがこちらはブロック自体を完全に分ける
  */
-public class BlockTrafficLight extends BlockContainer {
+public class BlockTrafficPole extends BlockContainer {
 	
 	/**
 	 * 基本はこちらを使う。このブロックを初期化する。
 	 * 基本的なパラメーターもこちらで勝手に指定する。後から変更は可能なはず。
 	 */
-	public BlockTrafficLight() {
+	public BlockTrafficPole() {
 		super(Material.ROCK); // 固定で石で初期化
-		this.setRegistryName(new ResourceLocation(GTS.MOD_ID, "light")); // Minecraft内部での登録名。どうやらUnlocalizedNameは削除されたみたい
-		this.setTranslationKey("light"); // 代わりにこれが使える
+		this.setRegistryName(new ResourceLocation(GTS.MOD_ID, "pole")); // Minecraft内部での登録名。どうやらUnlocalizedNameは削除されたみたい
+		this.setTranslationKey("pole"); // 代わりにこれが使える
 		this.setResistance(65535f); // 爆破耐性
 		this.setHardness(1.0f); // 硬さ。
 		this.setCreativeTab(GTS.gtsTab);
@@ -41,7 +44,7 @@ public class BlockTrafficLight extends BlockContainer {
 	 * 指定した材質を使ってこのブロックを初期化する。こっちはあまり使わない。
 	 * @param materialIn 材質。
 	 */
-	protected BlockTrafficLight(Material materialIn) {
+	protected BlockTrafficPole(Material materialIn) {
 		super(materialIn);
 	}
 	
@@ -74,8 +77,7 @@ public class BlockTrafficLight extends BlockContainer {
 	@Nullable
 	@Override
 	public TileEntity createNewTileEntity(World worldIn, int meta) {
-		TileEntityTrafficLight te = new TileEntityTrafficLight();
-		return te;
+		return new TileEntityTrafficPole();
 	}
 	
 	/**
@@ -102,14 +104,39 @@ public class BlockTrafficLight extends BlockContainer {
 	 */
 	@Override
 	public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
-		TileEntityTrafficLight te = (TileEntityTrafficLight) worldIn.getTileEntity(pos); // 必ずできると信じる
-		if (te == null || !(placer instanceof EntityPlayer)) {
-			// もし間に合わなかったら、もしくはプレイヤーじゃない別の何かによって置かれたら
-			return;
-		}
-		// 角度情報を入れる
-		EntityPlayer ep = (EntityPlayer) placer;
-		System.out.println(GMathHelper.normalizeAngle(-ep.getPitchYaw().y + 180));
-		te.setAngle(GMathHelper.normalizeAngle(-ep.getPitchYaw().y + 180)); // プレイヤーと逆向きに配置
+		// 上下のブロックを見てこのブロックの状態を設定する
+		TileEntityTrafficPole self = (TileEntityTrafficPole) worldIn.getTileEntity(pos); // 絶対にあるはず
+		if (self == null) return;
+		checkStatus(worldIn, self, pos);
+		
 	}
-}
+	
+	/**
+	 * 近くの（隣接する）ブロックが更新されたときに呼び出される。
+	 * @param world
+	 * @param pos
+	 * @param neighbor
+	 */
+	@Override
+	public void onNeighborChange(IBlockAccess world, BlockPos pos, BlockPos neighbor) {
+		super.onNeighborChange(world, pos, neighbor);
+		TileEntityTrafficPole self = (TileEntityTrafficPole) world.getTileEntity(pos);
+		if (self == null) return;
+		checkStatus((World) world, self, pos);
+		
+	}
+	
+	private void checkStatus(World world, TileEntityTrafficPole self, BlockPos pos) {
+		TileEntity top = world.getTileEntity(pos.up()); // 上部を取得
+		TileEntity down = world.getTileEntity(pos.down()); // 下部を取得
+		if (top == null && down == null) self.setBottom(true); // 単独の場合は下部扱いとする
+		if (top instanceof TileEntityTrafficPole && !(down instanceof  TileEntityTrafficPole)) {
+			// 上につながっているだけなので下部扱いとする
+			self.setBottom(true);
+		}
+		if (down instanceof TileEntityTrafficPole && !(top instanceof  TileEntityTrafficPole)) {
+			// 下につながっているだけなので上部扱いとする
+			self.setTop(true);
+		}
+	}
+ }

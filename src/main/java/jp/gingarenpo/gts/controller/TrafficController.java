@@ -1,12 +1,9 @@
 package jp.gingarenpo.gts.controller;
 
-import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.controller.cycle.Cycle;
-import jp.gingarenpo.gts.controller.phase.Phase;
 import jp.gingarenpo.gts.controller.phase.PhaseBase;
-import jp.gingarenpo.gts.data.ConfigBase;
+import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
-import jp.gingarenpo.gts.light.TrafficLight;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -14,7 +11,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -86,13 +82,13 @@ public class TrafficController implements Serializable {
 		Cycle cycle = new Cycle("default_cycle");
 		ArrayList object = new ArrayList();
 		object.add("g300");
-		cycle.addPhase(new PhaseBase("default", 20).addChannel(1, new ConfigBase.LightObject().setObjects(object).setName("green")));
+		cycle.addPhase(new PhaseBase("default", 20).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("green")));
 		object = new ArrayList();
 		object.add("y300");
-		cycle.addPhase(new PhaseBase("default2", 20).addChannel(1, new ConfigBase.LightObject().setObjects(object).setName("yellow")));
+		cycle.addPhase(new PhaseBase("default2", 20).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("yellow")));
 		object = new ArrayList();
 		object.add("r300");
-		cycle.addPhase(new PhaseBase("default3", 20).addChannel(1, new ConfigBase.LightObject().setObjects(object).setName("red")));
+		cycle.addPhase(new PhaseBase("default3", 20).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("red")));
 		cycles.put("default", cycle);
 	}
 	

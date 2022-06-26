@@ -1,9 +1,8 @@
 package jp.gingarenpo.gts.controller.cycle;
 
-import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.controller.TrafficController;
 import jp.gingarenpo.gts.controller.phase.Phase;
-import jp.gingarenpo.gts.data.ConfigBase;
+import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import net.minecraft.world.World;
 
@@ -189,7 +188,7 @@ public class Cycle implements Serializable {
 			nowPhase++;
 			for (TileEntityTrafficLight tl : controller.getTrafficLights()) {
 				// アタッチしている信号機に送信する
-				ConfigBase.LightObject l = getNowPhase().getChannel(tl.getData().getSignal());
+				ConfigTrafficLight.LightObject l = getNowPhase().getChannel(tl.getData().getSignal());
 				if (l == null) continue;
 				tl.getData().setLight(l);
 			}
@@ -212,7 +211,7 @@ public class Cycle implements Serializable {
 		nowPhase = 0;
 		for (TileEntityTrafficLight tl : controller.getTrafficLights()) {
 			// アタッチしている信号機に送信する
-			ConfigBase.LightObject l = getNowPhase().getChannel(tl.getData().getSignal());
+			ConfigTrafficLight.LightObject l = getNowPhase().getChannel(tl.getData().getSignal());
 			if (l == null) continue;
 			tl.getData().setLight(l);
 		}

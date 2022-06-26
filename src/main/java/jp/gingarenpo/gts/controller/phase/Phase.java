@@ -1,7 +1,7 @@
 package jp.gingarenpo.gts.controller.phase;
 
 import jp.gingarenpo.gts.controller.TrafficController;
-import jp.gingarenpo.gts.data.ConfigBase;
+import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.exception.DataExistException;
 import net.minecraft.world.World;
 
@@ -28,7 +28,7 @@ public abstract class Phase implements Serializable {
 	 * 各チャンネル毎にどの信号を光らせるかを指定するハッシュマップ。
 	 * チャンネル番号は1から指定可能。それ以外は登録不可。ArrayListだとlong使えないみたいなので
 	 */
-	protected HashMap<Long, ConfigBase.LightObject> channels = new HashMap<Long, ConfigBase.LightObject>();
+	protected HashMap<Long, ConfigTrafficLight.LightObject> channels = new HashMap<Long, ConfigTrafficLight.LightObject>();
 	
 	/**
 	 * このフェーズが開始してからの総Tick数を保持する。
@@ -66,7 +66,7 @@ public abstract class Phase implements Serializable {
 	 * @param lo 指定したい信号色の状態。
 	 * @throws IllegalArgumentException 番号が0以下の場合
 	 */
-	public Phase addChannel(long key, ConfigBase.LightObject lo) throws IllegalArgumentException {
+	public Phase addChannel(long key, ConfigTrafficLight.LightObject lo) throws IllegalArgumentException {
 		if (key <= 0) throw new IllegalArgumentException("Key must be greater than 0");
 		this.channels.put(key, lo);
 		return this;
@@ -79,7 +79,7 @@ public abstract class Phase implements Serializable {
 	 * @throws IllegalArgumentException 番号が0以下の場合
 	 * @throws DataExistException 指定したチャンネルに既に値が入っている場合
 	 */
-	public Phase addChannelTry(long key, ConfigBase.LightObject lo) throws IllegalArgumentException, DataExistException {
+	public Phase addChannelTry(long key, ConfigTrafficLight.LightObject lo) throws IllegalArgumentException, DataExistException {
 		if (channels.containsKey(key)) throw new DataExistException("Key" + key + " exist");
 		return this.addChannel(key, lo);
 		
@@ -90,7 +90,7 @@ public abstract class Phase implements Serializable {
 	 * @param key チャンネル番号。
 	 * @return 登録されていればそのチャンネルの状態、されていなければnull
 	 */
-	public ConfigBase.LightObject getChannel(long key) {
+	public ConfigTrafficLight.LightObject getChannel(long key) {
 		return channels.get(key);
 	}
 	

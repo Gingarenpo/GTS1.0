@@ -1,7 +1,7 @@
 # Block
 tile.control.name=Traffic Controller
 tile.light.name=Traffic Light
-
+tile.pole.name=Traffic Pole
 
 # item
 

@@ -1,22 +1,18 @@
 package jp.gingarenpo.gingacore.mqo;
 
+import jp.gingarenpo.gingacore.annotation.NeedlessMinecraft;
+import jp.gingarenpo.gingacore.helper.GMathHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.Vector3d;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+
 import java.io.*;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import jp.gingarenpo.gingacore.annotation.NeedlessMinecraft;
-import jp.gingarenpo.gingacore.helper.GMathHelper;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import org.lwjgl.opengl.GL11;
 
 /**
  * このクラスは、MQOオブジェクトを作成します。このオブジェクト自体は基本的に使わず、サブオブジェクトを頻繁に使う
@@ -30,7 +26,7 @@ public class MQO implements Serializable {
 	/**
 	 * オブジェクトの名前をキーとして格納しています
 	 */
-	private HashMap<String, MQOObject> object = new HashMap<String, MQOObject>();
+	private HashMap<String, MQOObject> object = new HashMap<>();
 
 
 	/**
@@ -167,6 +163,7 @@ public class MQO implements Serializable {
 				// ここからはいろいろ分かれますああ大変
 
 				if (ff) {
+					assert obj != null;
 					// 次に求めるのはfであります
 					if (!Pattern.matches(regexF, line)) // パターンが見つからないとき（MQOフォーマットが異常）
 						throw new MQOException("Invalid mqo format!! (face expected but not.) at line " + col);
@@ -240,7 +237,7 @@ public class MQO implements Serializable {
 	 */
 	public MQO normalize(double size) {
 		// まずロールバックできるように自分自身を代入
-		MQO original = (MQO) this.clone();
+		MQO original = this.clone();
 
 		// 効率悪いけど全部のオブジェクトに対して作業を繰り返す
 		double minX = 0, minY = 0, minZ = 0, maxX = 0, maxY = 0, maxZ = 0; // それぞれの頂点に対する最大値を一時的に代入するもの
@@ -279,7 +276,7 @@ public class MQO implements Serializable {
 		}
 
 		// 処理終了（faceの方には頂点番号しか格納していないので弄る必要がない）
-		//System.out.println("正規化後座標最小XYZ: " + minX * per + ", " + minY * per + ", " + minZ * per + ", 最大XYZ: " + maxX * per + ", " + maxY * per + ", " + maxZ * per);
+		// System.out.println("正規化後座標最小XYZ: " + minX * per + ", " + minY * per + ", " + minZ * per + ", 最大XYZ: " + maxX * per + ", " + maxY * per + ", " + maxZ * per);
 		return original;
 
 	}
@@ -328,12 +325,40 @@ public class MQO implements Serializable {
 		return new MQO(this);
 	}
 
-	@SuppressWarnings("serial")
-	public class MQOException extends RuntimeException {
+	public static class MQOException extends RuntimeException {
 		// 例外処理
 
 		public MQOException(String mes) {
 			super(mes);
 		}
+	}
+	
+	/**
+	 * このモデルの中心点を算出します。重い処理なので連続で呼び出すことは推奨していません。
+	 * 結果はXYZの順番で格納されたdoubleになります
+	 * @return 中心点の座標（原点=0としたときの）
+	 */
+	public double[] getCenterPosition() {
+		// 単に各頂点の平均値を取ればいい
+		// 効率悪いけど全部のオブジェクトに対して作業を繰り返す
+		double minX = 0, minY = 0, minZ = 0, maxX = 0, maxY = 0, maxZ = 0; // それぞれの頂点に対する最大値を一時的に代入するもの
+		for (MQOObject obj : this.getObjects4Loop()) {
+			// オブジェクトの頂点座標を取得する
+			for (MQOVertex vertex : obj.getVertexs()) {
+				// 全ての頂点に対して最小値と最大値を算出していく
+				if (minX > vertex.getX()) minX = vertex.getX();
+				if (maxX < vertex.getX()) maxX = vertex.getX();
+				if (minY > vertex.getY()) minY = vertex.getY();
+				if (maxY < vertex.getY()) maxY = vertex.getY();
+				if (minZ > vertex.getZ()) minZ = vertex.getZ();
+				if (maxZ < vertex.getZ()) maxZ = vertex.getZ();
+			}
+		}
+		
+		double sizeX = GMathHelper.distance(minX, maxX);
+		double sizeY = GMathHelper.distance(minY, maxY);
+		double sizeZ = GMathHelper.distance(minZ, maxZ); // 以上、3つとも距離を算出する
+		
+		return new double[] {maxX - sizeX / 2, maxY - sizeY / 2, maxZ - sizeZ / 2};
 	}
 }

@@ -45,7 +45,7 @@ public class MQOFace implements Serializable {
 		// System.out.println("obj("+mqo.getName()+") : v["+vs.length+"] uv["+uvs.length+"], v=["+vv+"]");
 
 		if (vs.length * 2 != uvs.length) // 座標数が一致しない
-			throw mqo.getParent().new MQOException("Illegal UV or Vertex parameter!!");
+			throw new MQO.MQOException("Illegal UV or Vertex parameter!!");
 
 		// X,Y,Zそれぞれを代入する
 		final double[] vX = new double[vs.length];
@@ -111,7 +111,13 @@ public class MQOFace implements Serializable {
 		}
 		
 		// 単位ベクトルの大きさを返しそのy座標を取得する
-		double y = GMathHelper.getDefaultAreaDirection(vs[0].getX(), vs[0].getY(), vs[0].getZ(), vs[1].getX(), vs[1].getY(), vs[1].getZ(), vs[2].getX(), vs[2].getY(), vs[2].getZ())[1];
+		double y = 0;
+		try {
+			y = GMathHelper.getDefaultAreaDirection(vs[0].getX(), vs[0].getY(), vs[0].getZ(), vs[1].getX(), vs[1].getY(), vs[1].getZ(), vs[2].getX(), vs[2].getY(), vs[2].getZ())[1];
+		} catch (IllegalArgumentException e) {
+			// e.printStackTrace();
+			return 0.5f;
+		}
 		
 		// Version1の時点ではそこまで凝らない予定なので割愛
 		// Version1.1とかで、太陽の向きに即した角度で影を反映させたい

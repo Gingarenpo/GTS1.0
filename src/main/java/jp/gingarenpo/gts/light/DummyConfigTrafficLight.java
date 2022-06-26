@@ -1,4 +1,4 @@
-package jp.gingarenpo.gts.data;
+package jp.gingarenpo.gts.light;
 
 import jp.gingarenpo.gts.GTS;
 import net.minecraft.client.Minecraft;
@@ -8,9 +8,9 @@ import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class DummyConfig extends ConfigBase {
+public class DummyConfigTrafficLight extends ConfigTrafficLight {
 	
-	public DummyConfig() {
+	public DummyConfigTrafficLight() {
 		this.setId("dummy"); // 名前はこれで固定
 		// テクスチャを無理やり指定
 		TexturePath t = new TexturePath();
@@ -22,6 +22,8 @@ public class DummyConfig extends ConfigBase {
 			e.printStackTrace();
 		}
 		this.setTextures(t);
+		
+		this.setShowBoth(true);
 		
 		// ベースのオブジェクト（無点灯）指定
 		ArrayList<String> b = new ArrayList<String>();
@@ -35,6 +37,7 @@ public class DummyConfig extends ConfigBase {
 		b.add("g");
 		b.add("y");
 		b.add("r");
+		b.add("obj1");
 		this.setBody(b);
 		
 		// 点灯部分指定
@@ -70,6 +73,9 @@ public class DummyConfig extends ConfigBase {
 		l2.add(l3);
 		l2.add(l4);
 		this.setPatterns(l2);
+		
+		// 中心点も指定
+		this.setCenterPosition(new double[] {0, 0, 0});
 		
 		
 	}
