@@ -3,8 +3,9 @@ tile.control.name=Traffic Controller
 tile.light.name=Traffic Light
 tile.pole.name=Traffic Pole
 
-# item
 
+# item
+item.arm.name=Traffic Arm
 
 # itemGroup
 itemGroup.GTS=GTS - Ginren Traffic System

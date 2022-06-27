@@ -2,12 +2,12 @@ package jp.gingarenpo.gts.pole;
 
 import jp.gingarenpo.gingacore.mqo.MQOObject;
 import jp.gingarenpo.gts.GTS;
-import jp.gingarenpo.gts.pack.Pack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.util.math.BlockPos;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.image.BufferedImage;
@@ -58,9 +58,6 @@ public class RendererTrafficPole extends TileEntitySpecialRenderer<TileEntityTra
 		
 		Tessellator t = Tessellator.getInstance();
 		t.getBuffer().begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_COLOR);
-		
-		
-		
 		for (MQOObject o: te.getAddon().getModel().getObjects4Loop()) {
 			if (objects.contains(o.getName())) {
 				// あればそれを描画する
@@ -68,6 +65,36 @@ public class RendererTrafficPole extends TileEntitySpecialRenderer<TileEntityTra
 			}
 		}
 		t.draw();
+		
+		// アームの描画を行う
+		if (te.getArm() != null && te.getArm().getAddon() != null) {
+			if (te.getArm().getAddon().getConfig().getTexImage() == null) {
+				// テクスチャがない場合は読み込む
+				BufferedImage tex = GTS.loader.getTexture(te.getPackLocation(), te.getArm().getAddon().getConfig().getTexture());
+				if (tex != null) {
+					te.getArm().getAddon().getConfig().setTexImage(tex);
+					
+				}
+				else {
+					// 存在しないパックなのでダミーに差し替え
+					te.getArm().setDummyModel();
+					GTS.GTSLog.warn("Warning. Arm model missing.");
+				}
+			}
+			
+			if (te.getArm().getTexture() == null) {
+				te.getArm().setTexture(Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("ta_" + te.getArm().getAddon().getConfig().getId(), new DynamicTexture(te.getArm().getAddon().getConfig().getTexImage())));
+			}
+			
+			this.bindTexture(te.getArm().getTexture());
+			for (double[] pos : te.getArm().getTo()) {
+				BlockPos pos2 = new BlockPos(pos[0], pos[1], pos[2]);
+				// まず距離を測る
+				double distance = te.getPos().distanceSqToCenter(pos2.getX(), pos2.getY(), pos2.getZ());
+				
+				System.out.println(distance);
+			}
+		}
 		
 		GL11.glPopMatrix();
 	}

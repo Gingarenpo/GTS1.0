@@ -2,6 +2,7 @@ package jp.gingarenpo.gts.pole;
 
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
+import jp.gingarenpo.gts.arm.TrafficArm;
 import jp.gingarenpo.gts.core.GTSTileEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.NBTTagCompound;
@@ -46,6 +47,18 @@ public class TileEntityTrafficPole extends GTSTileEntity {
 	 */
 	private File packLocation;
 	
+	/**
+	 * 接続されているアーム。何も接続されていない場合はnullが格納される。
+	 */
+	private TrafficArm arm;
+	
+	/**
+	 * アームの接続が行われている最中かどうか。
+	 */
+	private boolean preConnect = false;
+	
+	
+	
 	public ResourceLocation getTexture() {
 		return texture;
 	}
@@ -88,6 +101,14 @@ public class TileEntityTrafficPole extends GTSTileEntity {
 		this.packLocation = packLocation;
 	}
 	
+	public TrafficArm getArm() {
+		return arm;
+	}
+	
+	public void setArm(TrafficArm arm) {
+		this.arm = arm;
+	}
+	
 	/**
 	 * bottomと排他的となるため、ここで指定されたものがtrueで一緒になる場合
 	 * 自動的にbottomはfalseになる。
@@ -123,13 +144,24 @@ public class TileEntityTrafficPole extends GTSTileEntity {
 	@Override
 	public void readFromNBT(NBTTagCompound compound) {
 		super.readFromNBT(compound);
+		if (compound.hasKey("gts_tp_arm")) {
+			try (ByteArrayInputStream bais = new ByteArrayInputStream(compound.getByteArray("gts_tp_arm"))) {
+				try (ObjectInputStream ois = new ObjectInputStream(bais)) {
+					this.arm = (TrafficArm) ois.readObject();
+				}
+			} catch (IOException | ClassNotFoundException e) {
+				// メモリ不足などでストリームを確保できなかった場合、あるいはオブジェクトが正しく読み込まれなかった時
+				GTS.GTSLog.log(Level.DEBUG, "Can't load arm object (Maybe out of memory or data == null) -> " + e.getMessage());
+			}
+		}
+		
 		try (ByteArrayInputStream bais = new ByteArrayInputStream(compound.getByteArray("gts_tp_addon"))) {
 			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
 				this.addon = (ModelTrafficPole) ois.readObject();
 			}
 		} catch (IOException | ClassNotFoundException e) {
 			// メモリ不足などでストリームを確保できなかった場合、あるいはオブジェクトが正しく読み込まれなかった時
-			GTS.GTSLog.log(Level.DEBUG, "Can't load addon object (Maybe out of memory or data == null) -> " + e.getMessage());
+			GTS.GTSLog.log(Level.DEBUG, "Can't load Traffic addon object (Maybe out of memory or data == null) -> " + e.getMessage());
 		}
 		top = compound.getBoolean("gts_tp_top");
 		bottom = compound.getBoolean("gts_tp_bottom");
@@ -144,6 +176,17 @@ public class TileEntityTrafficPole extends GTSTileEntity {
 		c.setBoolean("gts_tp_top", top);
 		c.setBoolean("gts_tp_bottom", bottom);
 		c.setString("gts_tp_pl", (packLocation == null) ? "" : packLocation.getAbsolutePath());
+		if (arm != null) {
+			try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+				try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+					oos.writeObject(this.arm); // アームの情報を書き込む
+					c.setByteArray("gts_tp_arm", baos.toByteArray()); // バイト列にしてタグに書き込み
+				}
+			} catch (IOException e) {
+				// メモリ不足などでストリームを確保できなかった場合
+				GTS.GTSLog.log(Level.ERROR, "Can't write addon object(Maybe out of memory) -> " + e.getMessage());
+			}
+		}
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
 				oos.writeObject(this.addon); // アドオンの情報を書き込む
@@ -212,5 +255,23 @@ public class TileEntityTrafficPole extends GTSTileEntity {
 		sb.append("addon = ").append(addon).append(". ");
 		sb.append(top ? "It's top." : (bottom ? "It's bottom." : "It's base."));
 		return sb.toString();
+	}
+	
+	/**
+	 * アームの接続を開始する。
+	 */
+	public void startConnect() {
+		this.preConnect = true;
+	}
+	
+	/**
+	 * アームの接続を解除する。
+	 */
+	public void endConnect() {
+		this.preConnect = false;
+	}
+	
+	public boolean isPreConnect() {
+		return this.preConnect;
 	}
 }

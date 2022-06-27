@@ -7,10 +7,8 @@ import jp.gingarenpo.gts.light.RendererTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import jp.gingarenpo.gts.pole.RendererTrafficPole;
 import jp.gingarenpo.gts.pole.TileEntityTrafficPole;
-import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
-import net.minecraftforge.fml.client.registry.RenderingRegistry;
 
 import static net.minecraftforge.client.model.ModelLoader.setCustomModelResourceLocation;
 
@@ -26,6 +24,7 @@ public class GTSProxy {
 		setCustomModelResourceLocation(GTS.Items.control, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "control"), "inventory"));
 		setCustomModelResourceLocation(GTS.Items.light, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "light"), "inventory"));
 		setCustomModelResourceLocation(GTS.Items.pole, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "pole"), "inventory"));
+		setCustomModelResourceLocation(GTS.Items.arm, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "arm"), "inventory"));
 		
 	}
 	

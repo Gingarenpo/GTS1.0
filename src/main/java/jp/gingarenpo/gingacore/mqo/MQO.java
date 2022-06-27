@@ -3,11 +3,11 @@ package jp.gingarenpo.gingacore.mqo;
 import jp.gingarenpo.gingacore.annotation.NeedlessMinecraft;
 import jp.gingarenpo.gingacore.helper.GMathHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.Vector3d;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -219,6 +219,18 @@ public class MQO implements Serializable {
 			Minecraft.getMinecraft().displayCrashReport(c);*/
 		}
 	}
+	
+	/**
+	 * 全オブジェクト名を配列にしたものを返します。
+	 * @return 配列
+	 */
+	public ArrayList<String> getObjectNames() {
+		ArrayList<String> s = new ArrayList<>();
+		for (MQOObject o : getObjects4Loop()) {
+			s.add(o.getName());
+		}
+		return s;
+	}
 
 	/**
 	 * 任意座標の正規化を行います。引数に数字を指定することで、中心を0としたときにその指定した数値までの大きさにモデルの座標を直します。
@@ -236,12 +248,34 @@ public class MQO implements Serializable {
 	 *
 	 */
 	public MQO normalize(double size) {
+		return normalize(size, getObjectNames());
+
+	}
+	
+	/**
+	 * 任意座標の正規化を行います。引数に数字を指定することで、中心を0としたときにその指定した数値までの大きさにモデルの座標を直します。
+	 * 例えば、「3」を指定した際は、XYZがそれぞれ「-1.5～1.5」の間に収まるように（最大の長さが3になるように）調整します。
+	 * 精度はそこまで高くないため、極端に大きく細かなオブジェクトに対して実行すると切り捨てられて形が崩壊するかもしれません。
+	 *
+	 * 挙動不審なことが多いため、このメソッドは正規化した後返り値として正規化前のMQOオブジェクトを返します。通常は直接メソッドを
+	 * 叩いて構いませんが、何かの都合でロールバックしたい場合などは、代入しておくとバックアップの代わりにもなります。
+	 *
+	 * ※全座標が指定したサイズ未満である場合は実行することで拡大されてしまう可能性があります。（修正する予定ですが）
+	 *
+	 * @param size 数字で指定します。指定したサイズが最大の長さになるように正規化します。
+	 * @param object ここで指定したオブジェクトのみを正規化の対象とします。
+	 * @return この正規化を実行する前のMQOオブジェクト。
+	 *
+	 *
+	 */
+	public MQO normalize(double size, ArrayList<String> object) {
 		// まずロールバックできるように自分自身を代入
 		MQO original = this.clone();
-
+		
 		// 効率悪いけど全部のオブジェクトに対して作業を繰り返す
 		double minX = 0, minY = 0, minZ = 0, maxX = 0, maxY = 0, maxZ = 0; // それぞれの頂点に対する最大値を一時的に代入するもの
 		for (MQOObject obj : this.getObjects4Loop()) {
+			if (!object.contains(obj.getName())) continue;
 			// オブジェクトの頂点座標を取得する
 			for (MQOVertex vertex : obj.getVertexs()) {
 				// 全ての頂点に対して最小値と最大値を算出していく
@@ -255,7 +289,7 @@ public class MQO implements Serializable {
 		}
 		// ここで、正規化する前の最大・最小座標が入る
 		//System.out.println("正規化前座標最小XYZ: " + minX + ", " + minY + ", " + minZ + ", 最大XYZ: " + maxX + ", " + maxY + ", " + maxZ);
-
+		
 		// 次に、サイズに最適化するための係数を算出する
 		// XYZそれぞれの距離を算出する
 		double sizeX = GMathHelper.distance(minX, maxX);
@@ -263,7 +297,7 @@ public class MQO implements Serializable {
 		double sizeZ = GMathHelper.distance(minZ, maxZ); // 以上、3つとも距離を算出する
 		// 大きい数を割る
 		double per = size / Math.max(Math.max(sizeX, sizeY), sizeZ); // この係数を頂点にかけることで正規化が可能
-
+		
 		// もう一度ループ回します
 		for (MQOObject obj : this.getObjects4Loop()) {
 			// オブジェクトの頂点座標を取得する
@@ -274,11 +308,10 @@ public class MQO implements Serializable {
 				vertex.setZ(vertex.getZ() * per);
 			}
 		}
-
+		
 		// 処理終了（faceの方には頂点番号しか格納していないので弄る必要がない）
 		// System.out.println("正規化後座標最小XYZ: " + minX * per + ", " + minY * per + ", " + minZ * per + ", 最大XYZ: " + maxX * per + ", " + maxY * per + ", " + maxZ * per);
 		return original;
-
 	}
 
 	/**

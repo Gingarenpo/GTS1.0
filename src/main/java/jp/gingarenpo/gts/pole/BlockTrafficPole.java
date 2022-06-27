@@ -1,8 +1,7 @@
 package jp.gingarenpo.gts.pole;
 
-import jp.gingarenpo.gingacore.helper.GMathHelper;
 import jp.gingarenpo.gts.GTS;
-import jp.gingarenpo.gts.light.TileEntityTrafficLight;
+import jp.gingarenpo.gts.arm.ItemTrafficArm;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
@@ -10,7 +9,10 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
@@ -27,6 +29,7 @@ import javax.annotation.Nullable;
  * RTMはポールとアームが一体化していたがこちらはブロック自体を完全に分ける
  */
 public class BlockTrafficPole extends BlockContainer {
+	
 	
 	/**
 	 * 基本はこちらを使う。このブロックを初期化する。
@@ -110,6 +113,54 @@ public class BlockTrafficPole extends BlockContainer {
 		if (self == null) return;
 		checkStatus(worldIn, self, pos);
 		
+	}
+	
+	/**
+	 * このブロックが右クリックされたときに呼び出されるメソッド。
+	 * @param worldIn 世界。
+	 * @param pos 場所。
+	 * @param state 状態。
+	 * @param playerIn 右クリックしたプレイヤー。
+	 * @param hand どっちの手だったか。
+	 * @param facing 右クリックされた面の向き。
+	 * @param hitX 0-1の間で座標
+	 * @param hitY 0-1の間で座標
+	 * @param hitZ 0-1の間で座標
+	 * @return trueを返すとイベント処理
+	 */
+	@Override
+	public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+		ItemStack is = playerIn.getHeldItemMainhand(); // 持っているアイテムを取得
+		if (!(is.getItem() instanceof ItemTrafficArm)) return false; // アイテムがアームじゃなかったら無視
+		
+		TileEntityTrafficPole te = (TileEntityTrafficPole) worldIn.getTileEntity(pos); // 絶対にあるはず
+		
+		if (te.isPreConnect()) {
+			// 既に接続中だった場合。ポールからポールには接続不可能なので処理を終了する
+			GTS.GTSLog.info("Can't joint arm from pole to pole.");
+			te.endConnect();
+			NBTTagCompound ist = is.getTagCompound(); // 持っているItemStackに情報を追加する
+			if (ist == null) {
+				// 存在しない場合は新たに作成する
+				ist = new NBTTagCompound();
+				is.setTagCompound(ist);
+			}
+			ist.setIntArray("gts_pre_connect_xyz", new int[1]); // 1個しか要素がない状態は無接続とする
+			ist.setBoolean("gts_pre_connect", false);
+			return true;
+		}
+		
+		// 接続されていない場合、接続を開始する
+		te.startConnect();
+		NBTTagCompound ist = is.getTagCompound(); // 持っているItemStackに情報を追加する
+		if (ist == null) {
+			// 存在しない場合は新たに作成する
+			ist = new NBTTagCompound();
+			is.setTagCompound(ist);
+		}
+		ist.setBoolean("gts_pre_connect", true);
+		ist.setIntArray("gts_pre_connect_xyz", new int[] {pos.getX(), pos.getY(), pos.getZ()}); // 座標を読みださないと
+		return true;
 	}
 	
 	@Override
