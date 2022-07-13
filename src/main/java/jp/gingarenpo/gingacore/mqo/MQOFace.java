@@ -1,30 +1,21 @@
 package jp.gingarenpo.gingacore.mqo;
 
 import jp.gingarenpo.gingacore.helper.GMathHelper;
-import jp.gingarenpo.gingacore.helper.GPosHelper;
-import jp.gingarenpo.gingacore.helper.GRenderHelper;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import org.lwjgl.opengl.GL11;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-
-import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
 
 /**
  * MQOの面を格納するクラスです。この中にはさらに頂点も格納しているため、このクラスからOpenGL描画を行うこともできます
  *
  * @author 銀河連邦
  */
-public class MQOFace implements Serializable {
+public class MQOFace implements Serializable, Cloneable {
 	
-	private final MQOObject mqo; // 親オブジェクト
-	private final int[] v; // 頂点番号を格納（固定なのでプリミティブ配列で）
-	private final ArrayList<double[]> uv = new ArrayList<double[]>(); // 頂点対応のUV座標を格納
+	private MQOObject mqo; // 親オブジェクト
+	private int[] v; // 頂点番号を格納（固定なのでプリミティブ配列で）
+	private ArrayList<double[]> uv = new ArrayList<double[]>(); // 頂点対応のUV座標を格納
 
 	/**
 	 * 指定した親オブジェクト内に存在する面として、新規に面オブジェクトを作成します。面オブジェクトは三角形か四角形
@@ -59,6 +50,10 @@ public class MQOFace implements Serializable {
 			vY[i] = mqo.getVertexs().get(v[i]).getY();
 			vZ[i] = mqo.getVertexs().get(v[i]).getZ();
 		}
+	}
+	
+	private MQOFace(MQOObject mqo) {
+		this.mqo = mqo;
 	}
 
 
@@ -130,6 +125,13 @@ public class MQOFace implements Serializable {
 		return y + 0.4;
 	}
 	
+	public MQOFace clone() throws CloneNotSupportedException {
+		MQOFace f = (MQOFace) super.clone();
+		// f.mqo = mqo.clone(mqo);
+		f.v = this.v.clone();
+		f.uv = new ArrayList<>(this.uv);
+		return f;
+	}
 
 	
 }

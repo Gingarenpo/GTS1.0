@@ -92,7 +92,23 @@ public class RendererTrafficPole extends TileEntitySpecialRenderer<TileEntityTra
 				// まず距離を測る
 				double distance = te.getPos().distanceSqToCenter(pos2.getX(), pos2.getY(), pos2.getZ());
 				
-				System.out.println(distance);
+				// XYZそれぞれに対してatan2で回転角を算出する
+				double xy = Math.atan2(pos2.getY() - te.getPos().getY(), pos2.getX() - te.getPos().getX()); // Z回転
+				double xz = Math.atan2(pos2.getZ() - te.getPos().getZ(), pos2.getX() - te.getPos().getX()); // Y回転
+				double yz = Math.atan2(pos2.getZ() - te.getPos().getZ(), pos2.getY() - te.getPos().getY()); // X回転
+				System.out.printf("%f %f %f%n", xy, xz, yz);
+				
+				// 回転する
+				GL11.glRotated(Math.toDegrees(xy), 0, 0, 1);
+				GL11.glRotated(Math.toDegrees(xz), 0, 1, 0);
+				GL11.glRotated(Math.toDegrees(yz), 1, 0, 0);
+				
+				// とりあえず描画だけさせてみる
+				t.getBuffer().begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_COLOR);
+				for (MQOObject o: te.getArm().getAddon().getModel().rescale(0, 0, 0, 1.00001, 1, 1).getObjects4Loop()) {
+					o.draw(t.getBuffer(), 0);
+				}
+				t.draw();
 			}
 		}
 		

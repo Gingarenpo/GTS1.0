@@ -1,7 +1,6 @@
 package jp.gingarenpo.gts.core;
 
 import jp.gingarenpo.gingacore.mqo.MQO;
-import jp.gingarenpo.gts.core.ConfigBase;
 
 import java.io.Serializable;
 
@@ -28,7 +27,7 @@ public abstract class ModelBase<T extends ConfigBase> implements Serializable {
 		this.config = config;
 		this.model = model;
 		if (config != null) {
-			model.normalize(config.getSize());
+			this.model = model.normalize(config.getSize());
 			
 		}
 	}

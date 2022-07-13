@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,7 +22,7 @@ import java.util.regex.Pattern;
  *
  * @author 銀河連邦
  */
-public class MQO implements Serializable {
+public class MQO implements Serializable, Cloneable {
 
 	/**
 	 * オブジェクトの名前をキーとして格納しています
@@ -90,16 +91,7 @@ public class MQO implements Serializable {
 		parse(is);
 		is.close();
 	}
-
-	/**
-	 * クローンを作成する際に使用する専用のコンストラクタです。このコンストラクタは使用してはいけません（もっぱら使えないようにしている）
-	 *
-	 * @param orig
-	 */
-	private MQO(MQO orig) {
-		// 内部でのみ使用する
-		this.object = (HashMap<String, MQOObject>) orig.object.clone();
-	}
+	
 
 	/**
 	 * InputStreamからファイルを読み込み、MQOフォーマットとして解釈してインスタンス内の値を設定します。
@@ -237,8 +229,7 @@ public class MQO implements Serializable {
 	 * 例えば、「3」を指定した際は、XYZがそれぞれ「-1.5～1.5」の間に収まるように（最大の長さが3になるように）調整します。
 	 * 精度はそこまで高くないため、極端に大きく細かなオブジェクトに対して実行すると切り捨てられて形が崩壊するかもしれません。
 	 *
-	 * 挙動不審なことが多いため、このメソッドは正規化した後返り値として正規化前のMQOオブジェクトを返します。通常は直接メソッドを
-	 * 叩いて構いませんが、何かの都合でロールバックしたい場合などは、代入しておくとバックアップの代わりにもなります。
+	 * 戻り値として新しくサイズをリサイズしたモデルを返します。
 	 *
 	 * ※全座標が指定したサイズ未満である場合は実行することで拡大されてしまう可能性があります。（修正する予定ですが）
 	 *
@@ -257,8 +248,7 @@ public class MQO implements Serializable {
 	 * 例えば、「3」を指定した際は、XYZがそれぞれ「-1.5～1.5」の間に収まるように（最大の長さが3になるように）調整します。
 	 * 精度はそこまで高くないため、極端に大きく細かなオブジェクトに対して実行すると切り捨てられて形が崩壊するかもしれません。
 	 *
-	 * 挙動不審なことが多いため、このメソッドは正規化した後返り値として正規化前のMQOオブジェクトを返します。通常は直接メソッドを
-	 * 叩いて構いませんが、何かの都合でロールバックしたい場合などは、代入しておくとバックアップの代わりにもなります。
+	 * 戻り値として新しくサイズをリサイズしたモデルを返します。
 	 *
 	 * ※全座標が指定したサイズ未満である場合は実行することで拡大されてしまう可能性があります。（修正する予定ですが）
 	 *
@@ -270,36 +260,24 @@ public class MQO implements Serializable {
 	 */
 	public MQO normalize(double size, ArrayList<String> object) {
 		// まずロールバックできるように自分自身を代入
-		MQO original = this.clone();
+		MQO original = this.clone(null);
 		
 		// 効率悪いけど全部のオブジェクトに対して作業を繰り返す
-		double minX = 0, minY = 0, minZ = 0, maxX = 0, maxY = 0, maxZ = 0; // それぞれの頂点に対する最大値を一時的に代入するもの
-		for (MQOObject obj : this.getObjects4Loop()) {
-			if (!object.contains(obj.getName())) continue;
-			// オブジェクトの頂点座標を取得する
-			for (MQOVertex vertex : obj.getVertexs()) {
-				// 全ての頂点に対して最小値と最大値を算出していく
-				if (minX > vertex.getX()) minX = vertex.getX();
-				if (maxX < vertex.getX()) maxX = vertex.getX();
-				if (minY > vertex.getY()) minY = vertex.getY();
-				if (maxY < vertex.getY()) maxY = vertex.getY();
-				if (minZ > vertex.getZ()) minZ = vertex.getZ();
-				if (maxZ < vertex.getZ()) maxZ = vertex.getZ();
-			}
-		}
+		double[][] minmax = original.getMinMaxPosition(object);
+		
 		// ここで、正規化する前の最大・最小座標が入る
-		//System.out.println("正規化前座標最小XYZ: " + minX + ", " + minY + ", " + minZ + ", 最大XYZ: " + maxX + ", " + maxY + ", " + maxZ);
+		System.out.println("正規化前座標最小XYZ: " + minmax[0][0] + ", " + minmax[0][1] + ", " + minmax[0][2] + ", 最大XYZ: " + minmax[1][0] + ", " + minmax[1][1] + ", " + minmax[1][2]);
 		
 		// 次に、サイズに最適化するための係数を算出する
 		// XYZそれぞれの距離を算出する
-		double sizeX = GMathHelper.distance(minX, maxX);
-		double sizeY = GMathHelper.distance(minY, maxY);
-		double sizeZ = GMathHelper.distance(minZ, maxZ); // 以上、3つとも距離を算出する
+		double sizeX = GMathHelper.distance(minmax[0][0], minmax[1][0]);
+		double sizeY = GMathHelper.distance(minmax[0][1], minmax[1][1]);
+		double sizeZ = GMathHelper.distance(minmax[0][2], minmax[1][2]); // 以上、3つとも距離を算出する
 		// 大きい数を割る
 		double per = size / Math.max(Math.max(sizeX, sizeY), sizeZ); // この係数を頂点にかけることで正規化が可能
 		
 		// もう一度ループ回します
-		for (MQOObject obj : this.getObjects4Loop()) {
+		for (MQOObject obj : original.getObjects4Loop()) {
 			// オブジェクトの頂点座標を取得する
 			for (MQOVertex vertex : obj.getVertexs()) {
 				// 全ての頂点の全座標に対してさっきの係数をかける
@@ -309,10 +287,66 @@ public class MQO implements Serializable {
 			}
 		}
 		
+		minmax = original.getMinMaxPosition(object);
+		
 		// 処理終了（faceの方には頂点番号しか格納していないので弄る必要がない）
-		// System.out.println("正規化後座標最小XYZ: " + minX * per + ", " + minY * per + ", " + minZ * per + ", 最大XYZ: " + maxX * per + ", " + maxY * per + ", " + maxZ * per);
+		System.out.println("正規化後座標最小XYZ: " + minmax[0][0] + ", " + minmax[0][1] + ", " + minmax[0][2] + ", 最大XYZ: " + minmax[1][0] + ", " + minmax[1][1] + ", " + minmax[1][2]);
 		return original;
 	}
+	
+	/**
+	 * 指定された点（ox, oy, oz）を中心として、xper / yper / zperの倍率でモデルを拡大・縮小します。
+	 * 指定される点がモデルの外側にある場合でも拡縮を行います。
+	 * 極端に小さな値を指定した場合は計算誤差により正しい形を維持できない場合があります。
+	 *
+	 * @param ox 原点とみなすX座標。
+	 * @param oy 原点とみなすY座標。
+	 * @param oz 原点とみなすZ座標。
+	 * @param xper X方向の拡縮率。
+	 * @param yper Y方向の拡縮率。
+	 * @param zper Z方向の拡縮率。
+	 * @return 拡縮した後の状態のMQOインスタンス。
+	 */
+	public MQO rescale(double ox, double oy, double oz, double xper, double yper, double zper) {
+		MQO res = this.clone(null); // まず返すべきMQOをクローンする
+		
+		// 指定した原点分を全座標から引いた値をper倍した値が答え
+		for (MQOObject o: res.getObjects4Loop()) {
+			for (MQOVertex v: o.getVertexs()) {
+				v.setX((v.getX() - ox) * xper + ox);
+				v.setY((v.getY() - oy) * yper + oy);
+				v.setZ((v.getZ() - oz) * zper + oz);
+			}
+		}
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * 指定した点（ox, oy, oz）を中心として、XYZの比率を維持したままモデルをperで拡大・縮小します。
+	 * @param ox 原点とみなすX座標。
+	 * @param oy 原点とみなすY座標。
+	 * @param oz 原点とみなすZ座標。
+	 * @param per 拡縮率。
+	 * @return 拡縮した後の状態のMQOインスタンス。
+	 */
+	public MQO rescale(double ox, double oy, double oz, double per) {
+		return rescale(ox, oy, oz, per, per, per);
+	}
+	
+	/**
+	 * 指定した頂点を中心として、XYZの比率を維持したままモデルをperで拡大・縮小します。
+	 * @param vertex 原点とみなす頂点。
+	 * @param per 拡縮率。
+	 * @return 拡縮した後の状態のMQOインスタンス。
+	 */
+	public MQO rescale(MQOVertex vertex, double per) {
+		return rescale(vertex.getX(), vertex.getY(), vertex.getZ(), per);
+	}
+	
+	
 
 	/**
 	 * このMQOファイルが持つオブジェクトを返します。オブジェクト名を指定する形で返します。オブジェクトが存在しない
@@ -342,20 +376,32 @@ public class MQO implements Serializable {
 		return object.values();
 	}
 
-	
-	
-
-	
 
 	/**
 	 * このMQOオブジェクトを複製します。挙動不審です。
+	 * @param original null以外を指定すると、指定されたインスタンスと完全一致する場合そのインスタンス自体を返します
 	 * @return
 	 */
-	@Override
-	public MQO clone() {
+
+	public MQO clone(@Nullable MQO original) {
+		if (this.equals(original)) {
+			return original;
+		}
+		MQO clone = null;
+		try {
+			clone = (MQO) super.clone();
+			HashMap<String, MQOObject> os = new HashMap<>();
+			for (MQOObject o: this.getObjects4Loop()) {
+				os.put(o.getName(), o.clone(null));
+			}
+			clone.object = os;
+			
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+		}
 		// クローンする際は、全パラメーターを代入しなくてはならない
 		// その際は、コンストラクタに任せている
-		return new MQO(this);
+		return clone;
 	}
 
 	public static class MQOException extends RuntimeException {
@@ -374,10 +420,31 @@ public class MQO implements Serializable {
 	public double[] getCenterPosition() {
 		// 単に各頂点の平均値を取ればいい
 		// 効率悪いけど全部のオブジェクトに対して作業を繰り返す
+		double[][] minmax = getMinMaxPosition();
+		
+		double sizeX = GMathHelper.distance(minmax[0][0], minmax[1][0]);
+		double sizeY = GMathHelper.distance(minmax[0][1], minmax[1][1]);
+		double sizeZ = GMathHelper.distance(minmax[0][2], minmax[1][2]); // 以上、3つとも距離を算出する
+		
+		return new double[] {minmax[1][0] - sizeX / 2, minmax[1][1] - sizeY / 2, minmax[1][2] - sizeZ / 2};
+	}
+	
+	/**
+	 * このMQOオブジェクトの最も小さいand最も大きい頂点座標をXYZ各頂点ごとに算出します。
+	 * 結果は二次元配列で返され、[0]が最小値、[1]が最大値となり、その中に0,1,2=X,Y,Zと格納されています。
+	 *
+	 * あくまで各方向の最小値と最大値であり、これらすべてを満たす頂点が存在するとは限りません。
+	 *
+	 * @param object 除外するオブジェクト。
+	 *
+	 * @return 最小XYZと最大XYZ
+	 */
+	public double[][] getMinMaxPosition(ArrayList<String> object) {
 		double minX = 0, minY = 0, minZ = 0, maxX = 0, maxY = 0, maxZ = 0; // それぞれの頂点に対する最大値を一時的に代入するもの
 		for (MQOObject obj : this.getObjects4Loop()) {
 			// オブジェクトの頂点座標を取得する
 			for (MQOVertex vertex : obj.getVertexs()) {
+				if (!object.contains(obj.getName())) continue; // 関係ないオブジェクトの場合は無視
 				// 全ての頂点に対して最小値と最大値を算出していく
 				if (minX > vertex.getX()) minX = vertex.getX();
 				if (maxX < vertex.getX()) maxX = vertex.getX();
@@ -387,11 +454,15 @@ public class MQO implements Serializable {
 				if (maxZ < vertex.getZ()) maxZ = vertex.getZ();
 			}
 		}
-		
-		double sizeX = GMathHelper.distance(minX, maxX);
-		double sizeY = GMathHelper.distance(minY, maxY);
-		double sizeZ = GMathHelper.distance(minZ, maxZ); // 以上、3つとも距離を算出する
-		
-		return new double[] {maxX - sizeX / 2, maxY - sizeY / 2, maxZ - sizeZ / 2};
+		return new double[][] {new double[] {minX, minY, minZ}, new double[] {maxX, maxY, maxZ}};
 	}
+	
+	/**
+	 * 全オブジェクトに対してXYZ各方向の最小値と最大値を返します。
+	 * @return 最小値と最大値
+	 */
+	public double[][] getMinMaxPosition() {
+		return getMinMaxPosition(new ArrayList<>());
+	}
+	
 }

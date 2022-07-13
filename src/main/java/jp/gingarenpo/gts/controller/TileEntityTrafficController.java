@@ -80,7 +80,7 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 		// 作成する
 		try {
 			model = new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/default_traffic_controller.mqo")).getInputStream());
-			model.normalize(2); // 正規化
+			model = model.normalize(2); // 正規化
 		} catch (IOException e) {
 			// 何らかの影響でMQOが呼べなかった場合
 			e.printStackTrace();

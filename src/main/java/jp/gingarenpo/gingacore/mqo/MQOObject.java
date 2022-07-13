@@ -2,8 +2,8 @@ package jp.gingarenpo.gingacore.mqo;
 
 import net.minecraft.client.renderer.BufferBuilder;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
-import java.nio.Buffer;
 import java.util.ArrayList;
 
 /**
@@ -11,7 +11,7 @@ import java.util.ArrayList;
  * @author 銀河連邦
  *
  */
-public class MQOObject implements Serializable {
+public class MQOObject implements Serializable, Cloneable {
 	
 	// モデルの面（フェイス）
 	ArrayList<MQOFace> face = new ArrayList<MQOFace>(); // 面を番号ごとに格納
@@ -34,8 +34,16 @@ public class MQOObject implements Serializable {
 		return face;
 	}
 	
+	private void setFaces(ArrayList<MQOFace> face) {
+		this.face = face;
+	}
+	
 	public ArrayList<MQOVertex> getVertexs() {
 		return vertex;
+	}
+	
+	private void setVertexs(ArrayList<MQOVertex> vertex) {
+		this.vertex = vertex;
 	}
 	
 	public String getName() {
@@ -55,5 +63,22 @@ public class MQOObject implements Serializable {
 		for (MQOFace f : this.face) {
 			f.drawFace(b, color);
 		}
+	}
+	
+	public MQOObject clone(@Nullable MQOObject original) throws CloneNotSupportedException {
+		if (this.equals(original)) return original;
+		MQOObject o = new MQOObject(mqo.clone(mqo), name);
+		ArrayList<MQOVertex> vs = new ArrayList<>();
+		for (MQOVertex v: this.getVertexs()) {
+			vs.add(v.clone());
+		}
+		o.setVertexs(vs);
+		
+		ArrayList<MQOFace> fs = new ArrayList<>();
+		for (MQOFace f: this.getFaces()) {
+			fs.add(f.clone());
+		}
+		o.setFaces(fs);
+		return o;
 	}
 }

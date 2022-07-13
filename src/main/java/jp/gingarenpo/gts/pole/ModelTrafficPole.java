@@ -14,7 +14,7 @@ public class ModelTrafficPole extends ModelBase<ConfigTrafficPole> implements Se
 		this.config = config;
 		this.model = model;
 		if (config != null) {
-			model.normalize(1);
+			this.model = model.normalize(1);
 			
 		}
 	}

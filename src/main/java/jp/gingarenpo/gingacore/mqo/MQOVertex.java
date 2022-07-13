@@ -7,13 +7,13 @@ import java.io.Serializable;
  *
  * @author 銀河連邦
  */
-public class MQOVertex implements Serializable {
+public class MQOVertex implements Serializable, Cloneable {
 
 	private double x;
 	private double y;
 	private double z; // 以上、座標数値
 
-	private final MQOObject mqo; // 親オブジェクト
+	private MQOObject mqo; // 親オブジェクト
 
 	public MQOVertex(MQOObject mqo, String vnum) {
 		// MQOの頂点記述方式に従って格納
@@ -32,6 +32,10 @@ public class MQOVertex implements Serializable {
 		z = Double.parseDouble(v[2]);
 
 		// 終わり
+	}
+	
+	private MQOVertex(MQOObject mqo) {
+		this.mqo = mqo;
 	}
 
 	// 正規化に必要なためsetも入れているが外部からの呼び出しは不可能（同一パッケージ内のみ）
@@ -59,9 +63,17 @@ public class MQOVertex implements Serializable {
 	void setZ(double z) {
 		this.z = z;
 	}
-
-
-
+	
+	@Override
+	public MQOVertex clone() throws CloneNotSupportedException {
+		MQOVertex v = (MQOVertex) super.clone();
+		// v.mqo = mqo.clone(mqo);
+		v.setX(this.x);
+		v.setY(this.y);
+		v.setZ(this.z);
+		return v;
+	}
+	
 	/**
 	 * この頂点の属するMQOオブジェクトを返します。
 	 *

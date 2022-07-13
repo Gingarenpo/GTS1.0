@@ -1,0 +1,19 @@
+{
+	"variants": {
+		"normal": {
+			"model": "gts:arm"
+		},
+		"facing=west": {
+			"model": "gts:arm"
+		},
+		"facing=east": {
+			"model": "gts:arm"
+		},
+		"facing=north": {
+			"model": "gts:arm"
+		},
+		"facing=south": {
+			"model": "gts:arm"
+		}
+	}
+}
