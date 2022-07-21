@@ -124,14 +124,7 @@ public class MQOFace implements Serializable, Cloneable {
 		y = 0.6 - y;
 		return y + 0.4;
 	}
-	
-	public MQOFace clone() throws CloneNotSupportedException {
-		MQOFace f = (MQOFace) super.clone();
-		// f.mqo = mqo.clone(mqo);
-		f.v = this.v.clone();
-		f.uv = new ArrayList<>(this.uv);
-		return f;
-	}
+
 
 	
 }

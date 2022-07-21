@@ -64,15 +64,6 @@ public class MQOVertex implements Serializable, Cloneable {
 		this.z = z;
 	}
 	
-	@Override
-	public MQOVertex clone() throws CloneNotSupportedException {
-		MQOVertex v = (MQOVertex) super.clone();
-		// v.mqo = mqo.clone(mqo);
-		v.setX(this.x);
-		v.setY(this.y);
-		v.setZ(this.z);
-		return v;
-	}
 	
 	/**
 	 * この頂点の属するMQOオブジェクトを返します。

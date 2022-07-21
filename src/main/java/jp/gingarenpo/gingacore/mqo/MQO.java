@@ -6,7 +6,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
-import javax.annotation.Nullable;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -260,7 +259,7 @@ public class MQO implements Serializable, Cloneable {
 	 */
 	public MQO normalize(double size, ArrayList<String> object) {
 		// まずロールバックできるように自分自身を代入
-		MQO original = this.clone(null);
+		MQO original = this.clone();
 		
 		// 効率悪いけど全部のオブジェクトに対して作業を繰り返す
 		double[][] minmax = original.getMinMaxPosition(object);
@@ -308,7 +307,7 @@ public class MQO implements Serializable, Cloneable {
 	 * @return 拡縮した後の状態のMQOインスタンス。
 	 */
 	public MQO rescale(double ox, double oy, double oz, double xper, double yper, double zper) {
-		MQO res = this.clone(null); // まず返すべきMQOをクローンする
+		MQO res = this.clone(); // まず返すべきMQOをクローンする
 		
 		// 指定した原点分を全座標から引いた値をper倍した値が答え
 		for (MQOObject o: res.getObjects4Loop()) {
@@ -379,29 +378,31 @@ public class MQO implements Serializable, Cloneable {
 
 	/**
 	 * このMQOオブジェクトを複製します。挙動不審です。
-	 * @param original null以外を指定すると、指定されたインスタンスと完全一致する場合そのインスタンス自体を返します
+
 	 * @return
 	 */
 
-	public MQO clone(@Nullable MQO original) {
-		if (this.equals(original)) {
-			return original;
+	public MQO clone() {
+		// このクラスをシリアライズ
+		byte[] copy;
+		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+			try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+				oos.writeObject(this);
+			} // 書き込んでおく
+			copy = baos.toByteArray();
+		} catch (IOException e) {
+			throw new MQOException("Cannot clone because this object is not serializable");
 		}
-		MQO clone = null;
-		try {
-			clone = (MQO) super.clone();
-			HashMap<String, MQOObject> os = new HashMap<>();
-			for (MQOObject o: this.getObjects4Loop()) {
-				os.put(o.getName(), o.clone(null));
+		
+		MQO copyObject = null;
+		try (ByteArrayInputStream bais = new ByteArrayInputStream(copy)) {
+			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
+				copyObject = (MQO) ois.readObject();
 			}
-			clone.object = os;
-			
-		} catch (CloneNotSupportedException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | IOException e) {
+			throw new MQOException("Cannot clone because this object is not serializable");
 		}
-		// クローンする際は、全パラメーターを代入しなくてはならない
-		// その際は、コンストラクタに任せている
-		return clone;
+		return copyObject;
 	}
 
 	public static class MQOException extends RuntimeException {

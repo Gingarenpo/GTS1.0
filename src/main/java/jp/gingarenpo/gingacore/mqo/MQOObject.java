@@ -2,7 +2,6 @@ package jp.gingarenpo.gingacore.mqo;
 
 import net.minecraft.client.renderer.BufferBuilder;
 
-import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -64,21 +63,5 @@ public class MQOObject implements Serializable, Cloneable {
 			f.drawFace(b, color);
 		}
 	}
-	
-	public MQOObject clone(@Nullable MQOObject original) throws CloneNotSupportedException {
-		if (this.equals(original)) return original;
-		MQOObject o = new MQOObject(mqo.clone(mqo), name);
-		ArrayList<MQOVertex> vs = new ArrayList<>();
-		for (MQOVertex v: this.getVertexs()) {
-			vs.add(v.clone());
-		}
-		o.setVertexs(vs);
-		
-		ArrayList<MQOFace> fs = new ArrayList<>();
-		for (MQOFace f: this.getFaces()) {
-			fs.add(f.clone());
-		}
-		o.setFaces(fs);
-		return o;
-	}
+
 }
