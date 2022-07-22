@@ -21,5 +21,7 @@ public class DummyConfigTrafficArm extends ConfigTrafficArm implements Serializa
 		ArrayList<String> s1 = new ArrayList<>();
 		s1.add("start");
 		this.setStartObject(s1);
+		
+		this.setSize(1);
 	}
 }

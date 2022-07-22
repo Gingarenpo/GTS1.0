@@ -14,7 +14,7 @@ public class ModelTrafficArm extends ModelBase<ConfigTrafficArm> {
 		this.config = config;
 		this.model = model;
 		if (config != null) {
-			model.normalize(config.getSize(), config.startObject);
+			this.model = model.normalize(config.getSize(), config.startObject);
 			
 		}
 	}

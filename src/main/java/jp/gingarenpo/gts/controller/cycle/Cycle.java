@@ -5,9 +5,12 @@ import jp.gingarenpo.gts.controller.phase.Phase;
 import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import net.minecraft.world.World;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 /**
  * サイクルを保持するクラス。
@@ -34,7 +37,9 @@ public class Cycle implements Serializable {
 	/**
 	 * デフォルトコンストラクタは用意するものの、基本的には名称を指定して欲しい。
 	 */
-	public Cycle() {}
+	public Cycle() {
+		this(new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime()) + RandomStringUtils.randomAlphanumeric(24));
+	}
 	
 	/**
 	 * 指定した名称のサイクルインスタンスを作成する。

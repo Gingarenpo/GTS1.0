@@ -1,6 +1,7 @@
 package jp.gingarenpo.gts.controller;
 
 import jp.gingarenpo.gts.controller.cycle.Cycle;
+import jp.gingarenpo.gts.controller.cycle.TimeCycle;
 import jp.gingarenpo.gts.controller.phase.PhaseBase;
 import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
@@ -11,7 +12,10 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * 交通信号制御機のデータを保持するクラス。シリアライズ可能。
@@ -26,7 +30,7 @@ public class TrafficController implements Serializable {
 	/**
 	 * この制御機に登録されているサイクルを格納する。キーはサイクル名とし、ハッシュマップで格納する。順番は問わない（つもり）。
 	 */
-	private HashMap<String, Cycle> cycles = new HashMap<String, Cycle>();
+	private LinkedHashMap<String, Cycle> cycles = new LinkedHashMap<String, Cycle>();
 	
 	/**
 	 * 制御機自体の固有の名称。日本語OK
@@ -79,7 +83,7 @@ public class TrafficController implements Serializable {
 	public TrafficController() {
 		this(new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime()) + RandomStringUtils.randomAlphanumeric(24));
 		// TODO:デバッグ用。いずれ消す↓
-		Cycle cycle = new Cycle("default_cycle");
+		Cycle cycle = new TimeCycle("default_cycle", 0, 12000);
 		ArrayList object = new ArrayList();
 		object.add("g300");
 		cycle.addPhase(new PhaseBase("default", 20).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("green")));
@@ -89,7 +93,19 @@ public class TrafficController implements Serializable {
 		object = new ArrayList();
 		object.add("r300");
 		cycle.addPhase(new PhaseBase("default3", 20).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("red")));
-		cycles.put("default", cycle);
+		cycles.put("default_cycle", cycle);
+		
+		Cycle cycle2 = new TimeCycle("default_cycle2", 12001, 24000);
+		ArrayList object2 = new ArrayList();
+		object2.add("g300");
+		cycle2.addPhase(new PhaseBase("default", 5).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("green")));
+		object2 = new ArrayList();
+		object2.add("y300");
+		cycle2.addPhase(new PhaseBase("default2", 5).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("yellow")));
+		object2 = new ArrayList();
+		object2.add("r300");
+		cycle2.addPhase(new PhaseBase("default3", 5).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("red")));
+		cycles.put("default_cycle2", cycle2);
 	}
 	
 	/**
@@ -104,7 +120,7 @@ public class TrafficController implements Serializable {
 	 * サイクルのすべてを取得する。通常使用しない。
 	 * @return サイクルすべてが格納されたHashMap
 	 */
-	public HashMap<String, Cycle> getCycles() {
+	public LinkedHashMap<String, Cycle> getCycles() {
 		return cycles;
 	}
 	
@@ -128,7 +144,7 @@ public class TrafficController implements Serializable {
 	 * サイクルを一括登録する。通常使用しない。
 	 * @param cycles 登録したいサイクル。
 	 */
-	public void setCycles(HashMap<String, Cycle> cycles) {
+	public void setCycles(LinkedHashMap<String, Cycle> cycles) {
 		this.cycles = cycles;
 	}
 	

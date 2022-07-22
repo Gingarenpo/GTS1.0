@@ -1,7 +1,7 @@
 package jp.gingarenpo.gts.controller;
 
 import jp.gingarenpo.gts.GTS;
-import jp.gingarenpo.gts.controller.swing.GUITrafficController;
+import jp.gingarenpo.gts.controller.gui.swing.SwingGUITrafficController;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.PropertyDirection;
@@ -14,14 +14,12 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Arrays;
 
 /**
  * 制御機を設置することができるブロックを追加する。あくまで設置できるというだけであり、制御機自体の動作は
@@ -155,32 +153,24 @@ public class BlockTrafficController extends BlockContainer {
 	@Override
 	public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
 		// GUIを表示する（現在はSwing）
-		TileEntity te = worldIn.getTileEntity(pos); // 通常はあるはずなんだけど
-		if (te == null) {
-			playerIn.sendMessage(new TextComponentString("Something went to wrong. TileEntity is not found in this world."));
-			return false;
-		}
-		TileEntityTrafficController tetc = (TileEntityTrafficController) te; // 絶対そうに決まっていると信じたい
-		GUITrafficController gui = new GUITrafficController(GTS.window);
-		gui.update(tetc); // 設定
-		gui.setPlayer(playerIn); // プレイヤーセット
-		GTS.window.getContentPane().removeAll(); // 一旦全部取り外す
+		if (worldIn.isRemote) return false;
+		TileEntity te = worldIn.getTileEntity(pos);
+		if (!(te instanceof TileEntityTrafficController)) return false;
+		
+		GTS.GTSLog.warn(te);
+		
+		playerIn.openGui(GTS.INSTANCE, 1, worldIn, pos.getX(), pos.getY(), pos.getZ());
+		GTS.window = new SwingGUITrafficController(((TileEntityTrafficController) te).getData()); // GUI起動
 		GTS.window.setVisible(true);
-		GTS.window.getContentPane().add(gui); // コンポーネントを追加する
-		if (GTS.window.getWindowListeners().length > 0) {
-			GTS.window.removeWindowListener(GTS.window.getWindowListeners()[0]); // リスナーがある場合は削除
-		}
 		GTS.window.addWindowListener(new WindowAdapter() {
 			@Override
-			public void windowClosing(WindowEvent e) {
-				gui.onClose();
+			public void windowClosed(WindowEvent e) {
+				playerIn.closeScreen();
+				worldIn.notifyBlockUpdate(pos, worldIn.getBlockState(pos), worldIn.getBlockState(pos), 3);
+				te.markDirty();
+				GTS.window = null; // 元に戻す
 			}
-		}); // 閉じられたときに
-		GTS.window.setTitle("GTS Traffic Controller Manager");
-		gui.updateGUI(); // GUI値を更新
-		// ポーズ対策として空のGUIも開く
-		playerIn.openGui(GTS.INSTANCE, 1, worldIn, pos.getX(), pos.getY(), pos.getZ());
-		
+		});
 		return true;
 	}
 }

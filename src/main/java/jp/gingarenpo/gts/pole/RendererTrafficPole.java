@@ -3,6 +3,7 @@ package jp.gingarenpo.gts.pole;
 import jp.gingarenpo.gingacore.mqo.MQOObject;
 import jp.gingarenpo.gts.GTS;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
@@ -54,6 +55,7 @@ public class RendererTrafficPole extends TileEntitySpecialRenderer<TileEntityTra
 		ArrayList<String> objects = te.isTop() ? te.getAddon().getConfig().getTopObject() : (te.isBottom() ? te.getAddon().getConfig().getBottomObject() : te.getAddon().getConfig().getBaseObject());
 		
 		GL11.glPushMatrix();
+		GlStateManager.disableLighting();
 		GL11.glTranslated(x + 0.5, y, z + 0.5);
 		
 		Tessellator t = Tessellator.getInstance();
@@ -87,31 +89,53 @@ public class RendererTrafficPole extends TileEntitySpecialRenderer<TileEntityTra
 			}
 			
 			this.bindTexture(te.getArm().getTexture());
+			
 			for (double[] pos : te.getArm().getTo()) {
-				BlockPos pos2 = new BlockPos(pos[0], pos[1], pos[2]);
-				// まず距離を測る
-				double distance = te.getPos().distanceSqToCenter(pos2.getX(), pos2.getY(), pos2.getZ());
+				// アームの接続だけ繰り返す
+				BlockPos pos2 = new BlockPos(pos[0], pos[1], pos[2]); // アームの接続先をBlockPosとする
 				
-				// XYZそれぞれに対してatan2で回転角を算出する
-				double xy = Math.atan2(pos2.getY() - te.getPos().getY(), pos2.getX() - te.getPos().getX()); // Z回転
-				double xz = Math.atan2(pos2.getZ() - te.getPos().getZ(), pos2.getX() - te.getPos().getX()); // Y回転
-				double yz = Math.atan2(pos2.getZ() - te.getPos().getZ(), pos2.getY() - te.getPos().getY()); // X回転
-				System.out.printf("%f %f %f%n", xy, xz, yz);
+				// まず距離を測る
+				double distance = Math.sqrt(Math.pow((te.getPos().getX() - pos2.getX()), 2) + Math.pow((te.getPos().getY() - pos2.getY()), 2) + Math.pow((te.getPos().getZ() - pos2.getZ()), 2));
+				
+				// 回転角を算出する（座標系が逆なので負の数にしなくてはならない）
+				double xz = -Math.atan2(pos2.getZ() - te.getPos().getZ(), pos2.getX() - te.getPos().getX()); // Y回転（ただし逆）
 				
 				// 回転する
-				GL11.glRotated(Math.toDegrees(xy), 0, 0, 1);
 				GL11.glRotated(Math.toDegrees(xz), 0, 1, 0);
-				GL11.glRotated(Math.toDegrees(yz), 1, 0, 0);
 				
-				// とりあえず描画だけさせてみる
+				// スタートの続きから描きたいのでその分だけ移動する
+				double[][] minmax = te.getArm().getAddon().getModel().getMinMaxPosition(te.getArm().getAddon().getConfig().getStartObject());
+				GL11.glTranslated(minmax[1][0], 0, 0);
+				
+				// 中間地点の描画
 				t.getBuffer().begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_COLOR);
-				for (MQOObject o: te.getArm().getAddon().getModel().rescale(0, 0, 0, 1.00001, 1, 1).getObjects4Loop()) {
+				for (MQOObject o: te.getArm().getAddon().getModel().rescale(0, 0, 0, distance - 1, 1, 1).getObjects4Loop()) {
+					if (te.getArm().getAddon().getConfig().getStartObject().contains(o.getName())) {
+						continue;
+					}
 					o.draw(t.getBuffer(), 0);
 				}
 				t.draw();
+				
+				// スタートの位置に戻す
+				GL11.glTranslated(-minmax[1][0], 0, 0);
+				
+				// 初期地点の描画
+				t.getBuffer().begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_COLOR);
+				for (MQOObject o: te.getArm().getAddon().getModel().getObjects4Loop()) {
+					if (!te.getArm().getAddon().getConfig().getStartObject().contains(o.getName())) {
+						continue;
+					}
+					o.draw(t.getBuffer(), 0);
+				}
+				t.draw();
+				
+				// 回転を元に戻す
+				GL11.glRotated(-Math.toDegrees(xz), 0, 1, 0);
 			}
 		}
 		
+		GlStateManager.enableLighting();
 		GL11.glPopMatrix();
 	}
 }
