@@ -11,6 +11,8 @@ import java.util.ArrayList;
 
 public class DummyConfigTrafficArm extends ConfigTrafficArm implements Serializable  {
 	
+	private static final long serialVersionUID = 1L;
+	
 	public DummyConfigTrafficArm() throws IOException {
 		this.setId("dummy");
 		this.setTexImage(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tp.png")).getInputStream()));

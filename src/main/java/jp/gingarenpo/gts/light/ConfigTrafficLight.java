@@ -20,6 +20,8 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ConfigTrafficLight extends ConfigBase implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+	
 	
 	private TexturePath textures; // テクスチャをオブジェクト形式で代入する。
 	private ArrayList<String> body; // 無点灯パーツ

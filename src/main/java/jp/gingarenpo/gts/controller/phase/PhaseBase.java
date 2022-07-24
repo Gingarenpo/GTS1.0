@@ -9,6 +9,8 @@ import net.minecraft.world.World;
  */
 public class PhaseBase extends Phase {
 	
+	private static final long serialVersionUID = 1L;
+	
 	/**
 	 * どの長さまでTickを実行させるか
 	 */

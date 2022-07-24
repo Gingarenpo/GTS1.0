@@ -15,6 +15,8 @@ import net.minecraft.world.World;
  */
 public class ItemTrafficArm extends Item {
 	
+	private static final long serialVersionUID = 1L;
+	
 	public ItemTrafficArm() {
 		this.setRegistryName(new ResourceLocation(GTS.MOD_ID, "arm"));
 		this.setTranslationKey("arm");

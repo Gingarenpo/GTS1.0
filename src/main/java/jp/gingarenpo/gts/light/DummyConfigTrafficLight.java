@@ -10,6 +10,8 @@ import java.util.ArrayList;
 
 public class DummyConfigTrafficLight extends ConfigTrafficLight {
 	
+	private static final long serialVersionUID = 1L;
+	
 	public DummyConfigTrafficLight() {
 		this.setId("dummy"); // 名前はこれで固定
 		// テクスチャを無理やり指定

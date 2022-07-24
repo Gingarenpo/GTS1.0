@@ -16,6 +16,8 @@ public class MQOFace implements Serializable, Cloneable {
 	private MQOObject mqo; // 親オブジェクト
 	private int[] v; // 頂点番号を格納（固定なのでプリミティブ配列で）
 	private ArrayList<double[]> uv = new ArrayList<double[]>(); // 頂点対応のUV座標を格納
+	
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * 指定した親オブジェクト内に存在する面として、新規に面オブジェクトを作成します。面オブジェクトは三角形か四角形

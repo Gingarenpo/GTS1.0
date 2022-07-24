@@ -74,7 +74,7 @@ public class TileEntityTrafficPole extends GTSTileEntity {
 	
 	public void setDummyModel() {
 		try {
-			this.addon = (new ModelTrafficPole(new DummyConfigTrafficPole(), new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/dummy/dummy_tp.mqo")).getInputStream())));
+			this.addon = (new ModelTrafficPole(new DummyConfigTrafficPole(), new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/dummy/dummy_tp.mqo")).getInputStream()), null));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

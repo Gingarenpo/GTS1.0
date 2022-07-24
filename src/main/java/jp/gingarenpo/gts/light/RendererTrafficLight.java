@@ -1,15 +1,12 @@
 package jp.gingarenpo.gts.light;
 
 import jp.gingarenpo.gingacore.mqo.MQOObject;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 import java.util.Objects;
@@ -19,9 +16,7 @@ import java.util.Objects;
  */
 public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTrafficLight> {
 	
-	private ResourceLocation baseTex;
-	private ResourceLocation lightTex;
-	private ResourceLocation noLightTex; // それぞれテクスチャ
+	
 	
 	
 	/**
@@ -42,22 +37,17 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 
 		
 		if (te.getAddon() == null) return; // アドオンがまだ読み込まれていない場合（ダミーでも）は抜ける
-		ModelTrafficLight addon = te.getAddon(); // Nullでないことが保証される
-		ConfigTrafficLight config = addon.getConfig(); // これがnullになることはまずない
 		
-		
-		// リソースチェック
-		if (baseTex == null) {
-			// 存在しない場合のみ追加（IDでテクスチャを管理）
-			baseTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("tl_base_" + config.getId(), new DynamicTexture(config.getTextures().getBaseTex()));
-		}
-		if (lightTex == null) {
-			// 存在しない場合のみ追加（IDでテクスチャを管理）
-			lightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("tl_light_" + config.getId(), new DynamicTexture(config.getTextures().getLightTex()));
-		}
-		if (noLightTex == null) {
-			// 存在しない場合のみ追加（IDでテクスチャを管理）
-			noLightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("tl_noLight_" + config.getId(), new DynamicTexture(config.getTextures().getNoLightTex()));
+		if (te.getAddon().baseTex == null) {
+			// baseだけ抜け落ちるってことはないので
+			if (te.getAddon().getFile() == null) {
+				te.setDummyModel();
+				te.setDummyTexture();
+			}
+			else {
+				te.getAddon().redrawTexture(); // テクスチャを再生成する
+			}
+			te.markDirty();
 		}
 		
 		// サイクルチェック
@@ -89,18 +79,18 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		
 		
 		// オブジェクト毎にループ
-		for (MQOObject o: addon.getModel().getObjects4Loop()) {
+		for (MQOObject o: te.getAddon().getModel().getObjects4Loop()) {
 			boolean render = false;
 			boolean nolight = false; // 光らないかどうか
 			// オブジェクト毎に繰り返す
-			if (config.getBody().contains(o.getName())) {
+			if (te.getAddon().getConfig().getBody().contains(o.getName())) {
 				// このオブジェクトは無発光オブジェクトとして描画する
-				this.bindTexture(baseTex);
+				this.bindTexture(te.getAddon().baseTex);
 				render = true;
 			}
 			else {
 				// ライティングが必要な場合はちょっと変わる
-				for (ConfigTrafficLight.LightObject l : config.getPatterns()) {
+				for (ConfigTrafficLight.LightObject l : te.getAddon().getConfig().getPatterns()) {
 					// 一致しない場合はスルー
 					if (!l.equals(lightObject)) continue;
 					// 発光するかしないかを指定（存在するかどうかで決める）
@@ -109,7 +99,7 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 					}
 					else if (te.getAddon().getConfig().getLight().contains(o.getName())) {
 						// 未発光オブジェクト確定
-						this.bindTexture(noLightTex);
+						this.bindTexture(te.getAddon().noLightTex);
 						nolight = true;
 						render = true;
 					}
@@ -134,18 +124,18 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		t.draw(); // ベース部分を描画
 		t.getBuffer().begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_COLOR);
 		
-		for (MQOObject o: addon.getModel().getObjects4Loop()) {
+		for (MQOObject o: te.getAddon().getModel().getObjects4Loop()) {
 			boolean render = false;
 			// オブジェクト毎に繰り返す
-			if (!config.getBody().contains(o.getName())) {
+			if (!te.getAddon().getConfig().getBody().contains(o.getName())) {
 				// ライティングが必要な場合
-				for (ConfigTrafficLight.LightObject l : config.getPatterns()) {
+				for (ConfigTrafficLight.LightObject l : te.getAddon().getConfig().getPatterns()) {
 					// 一致しない場合はスルー
 					if (!l.equals(lightObject)) continue;
 					// 発光するかしないかを指定（存在するかどうかで決める）
 					if (Objects.equals(l, lightObject) && l.getObjects().contains(o.getName())) {
 						// 発光オブジェクト確定
-						this.bindTexture(lightTex);
+						this.bindTexture(te.getAddon().lightTex);
 						render = true;
 					}
 					

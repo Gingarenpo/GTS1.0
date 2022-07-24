@@ -11,6 +11,8 @@ import java.io.Serializable;
  */
 public class TrafficLight implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+	
 	/**
 	 * チャンネル。デフォルトは0で受信しない（設定のつもり）
 	 */

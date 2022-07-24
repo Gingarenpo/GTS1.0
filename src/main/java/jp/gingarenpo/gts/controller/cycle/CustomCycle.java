@@ -16,6 +16,8 @@ import java.io.File;
  */
 public class CustomCycle extends Cycle {
 	
+	private static final long serialVersionUID = 1L;
+	
 	/**
 	 * カスタムスクリプトが設置されている場所
 	 */

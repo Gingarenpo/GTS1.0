@@ -2,8 +2,8 @@
 	"credit": "Made with Blockbench",
 	"parent": "arm",
 	"textures": {
-		"0": "gts:blocks/arm",
-		"particle": "gts:blocks/arm"
+		"0": "gts:blocks/pole",
+		"particle": "gts:blocks/pole"
 	},
 	"elements": [
 		{

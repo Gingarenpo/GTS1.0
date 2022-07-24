@@ -4,6 +4,7 @@ import jp.gingarenpo.gingacore.helper.GMathHelper;
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.arm.ItemTrafficArm;
 import jp.gingarenpo.gts.arm.TrafficArm;
+import jp.gingarenpo.gts.light.gui.SwingGUITrafficLight;
 import jp.gingarenpo.gts.pole.TileEntityTrafficPole;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
@@ -22,6 +23,8 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 /**
  * 交通信号機（灯器）を追加するためのブロック。
@@ -133,6 +136,40 @@ public class BlockTrafficLight extends BlockContainer {
 	 */
 	@Override
 	public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+		if (canConnectArm(worldIn, pos, state, playerIn, hand, facing, hitX, hitY, hitZ)) {
+			return true; // 繋げた場合はそのまま処理終了
+		}
+		
+		if (worldIn.isRemote) return false;
+		
+		// TileEntity取得
+		TileEntity te = worldIn.getTileEntity(pos);
+		
+		if (!(te instanceof TileEntityTrafficLight)) return false; // TileEntityない
+		
+		// GUI開く
+		GTS.window = new SwingGUITrafficLight((TileEntityTrafficLight) te); // OPEN
+		GTS.window.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosed(WindowEvent e) {
+				// 反映させる
+				((TileEntityTrafficLight) te).getAddon().reloadModel();
+				playerIn.closeScreen(); // GUI閉じる
+				worldIn.notifyBlockUpdate(pos, worldIn.getBlockState(pos), worldIn.getBlockState(pos), 2);
+				GTS.window = null;
+			}
+		});
+		playerIn.openGui(GTS.INSTANCE, 1, worldIn, pos.getX(), pos.getY(), pos.getZ()); // ポーズ対策
+		GTS.window.setVisible(true);
+		return true;
+	}
+	
+	/**
+	 * アームがつなげるかどうかを返す。
+	 * 繋げる場合は繋げてtrue、繋げられない場合はfalse
+	 * @return
+	 */
+	private boolean canConnectArm(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
 		ItemStack is = playerIn.getHeldItemMainhand(); // 持っているアイテムを取得
 		if (!(is.getItem() instanceof ItemTrafficArm)) return false; // アイテムがアームじゃなかったら無視
 		

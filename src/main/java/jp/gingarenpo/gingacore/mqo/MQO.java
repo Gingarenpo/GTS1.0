@@ -27,6 +27,8 @@ public class MQO implements Serializable, Cloneable {
 	 * オブジェクトの名前をキーとして格納しています
 	 */
 	private HashMap<String, MQOObject> object = new HashMap<>();
+	
+	private static final long serialVersionUID = 1L;
 
 
 	/**
@@ -98,9 +100,12 @@ public class MQO implements Serializable, Cloneable {
 	 * @param is InputStreamを指定します。勝手に閉じないので2回目の呼び出しをする際はご注意
 	 */
 	private void parse(InputStream is) {
+		StringBuilder sb = new StringBuilder();
 		try (Scanner s = new Scanner(is)) {
 			// ということで読み込んでいきます。
 			// まずは「Object "~~" {」を探します
+			
+			
 
 			// 番号一覧
 			//String o = ""; // オブジェクト名
@@ -133,7 +138,7 @@ public class MQO implements Serializable, Cloneable {
 						&& !Pattern.matches(regexVN, line)
 						&& !Pattern.matches(regexFN, line)) {
 					// いずれの正規表現にも一致しなかった
-					// System.out.println("何にも一致しなかったです");
+					//System.out.println("何にも一致しなかったです");
 					continue; // 次の行へ（スキップ）
 				} else if (Pattern.matches("[\t]*\\}", line)) {
 					// 終了フラグの場合
@@ -181,7 +186,6 @@ public class MQO implements Serializable, Cloneable {
 					obj.getVertexs().add(new MQOVertex(obj, vnum));
 				} else if (Pattern.matches(regexO, line)) {
 					// Objectの始まりだった場合
-					// System.out.println("オブジェクトの始まりです");
 					final Matcher m = Pattern.compile(regexO).matcher(line);
 					m.find();
 					obj = new MQOObject(this, m.group(1)); // 名前で作成
@@ -260,7 +264,6 @@ public class MQO implements Serializable, Cloneable {
 	public MQO normalize(double size, ArrayList<String> object) {
 		// まずロールバックできるように自分自身を代入
 		MQO original = this.clone();
-		
 		// 効率悪いけど全部のオブジェクトに対して作業を繰り返す
 		double[][] minmax = original.getMinMaxPosition(object);
 		

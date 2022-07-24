@@ -19,6 +19,8 @@ import java.util.Calendar;
  */
 public class Cycle implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+	
 	/**
 	 * このサイクルの名称。サイクルは必ず1つの名前を持つ。
 	 */

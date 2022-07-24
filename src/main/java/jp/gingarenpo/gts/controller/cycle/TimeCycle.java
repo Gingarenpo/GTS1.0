@@ -10,6 +10,8 @@ import net.minecraft.world.World;
  */
 public class TimeCycle extends Cycle {
 	
+	private static final long serialVersionUID = 1L;
+	
 	/**
 	 * このサイクルを始めるべき時間帯（Minecraft基準）
 	 */

@@ -162,8 +162,13 @@ public class Loader {
 						// モデルファイルだった場合
 						try (ByteArrayOutputStream baos = new ByteArrayOutputStream(Math.toIntExact(entry.getSize()))) {
 							byte[] tmp = new byte[Math.toIntExact(entry.getSize())];
-							zis.read(tmp);
-							baos.write(tmp); // こうしないとMQOがZipストリームを閉じてしまう
+							int read = 0;
+							while (read < entry.getSize()) {
+								int already =  zis.read(tmp, read, (int) (entry.getSize()-read));
+								read += already;
+							}
+							baos.write(tmp);
+							
 							MQO mqo = new MQO(new ByteArrayInputStream(baos.toByteArray())); // MQOオブジェクトを設定
 							models.put(entry.getName(), mqo); // MQOオブジェクトを登録
 						} catch (IOException e) {
@@ -171,7 +176,7 @@ public class Loader {
 							GTS.GTSLog.log(Level.WARN, "Can't load" + entry.getName() + " some reason. -> " + e.getMessage());
 						} catch (MQO.MQOException e) {
 							// MQOファイルとして不適切な場合
-							GTS.GTSLog.log(Level.WARN, entry.getName() + " is not a MQO Format. It was skipped.");
+							GTS.GTSLog.log(Level.WARN, entry.getName() + " is not a MQO Format. It was skipped. -> " + e.getMessage());
 						}
 					}
 					else if (entry.getName().endsWith(".jpg") || entry.getName().endsWith(".png")) {
@@ -213,7 +218,7 @@ public class Loader {
 						t.setLightTex(textures.get(t.getLight()));
 						t.setNoLightTex(textures.get(t.getNoLight())); // 以上、テクスチャのセット
 						
-						m.add(new ModelTrafficLight(config, models.get(config.getModel()))); // モデルは絶対にあるはずなので
+						m.add(new ModelTrafficLight(config, models.get(config.getModel()), pack)); // モデルは絶対にあるはずなので
 					}
 					else if (configBase instanceof ConfigTrafficPole) {
 						ConfigTrafficPole config = (ConfigTrafficPole) configBase;
@@ -228,7 +233,7 @@ public class Loader {
 						}
 						
 						config.setTexImage(textures.get(config.getTexture()));
-						m.add(new ModelTrafficPole(config, models.get(config.getModel())));
+						m.add(new ModelTrafficPole(config, models.get(config.getModel()), pack));
 						
 					}
 					

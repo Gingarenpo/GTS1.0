@@ -157,8 +157,6 @@ public class BlockTrafficController extends BlockContainer {
 		TileEntity te = worldIn.getTileEntity(pos);
 		if (!(te instanceof TileEntityTrafficController)) return false;
 		
-		GTS.GTSLog.warn(te);
-		
 		playerIn.openGui(GTS.INSTANCE, 1, worldIn, pos.getX(), pos.getY(), pos.getZ());
 		GTS.window = new SwingGUITrafficController(((TileEntityTrafficController) te).getData()); // GUI起動
 		GTS.window.setVisible(true);

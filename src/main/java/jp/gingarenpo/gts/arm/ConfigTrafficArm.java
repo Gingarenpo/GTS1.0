@@ -18,6 +18,8 @@ public class ConfigTrafficArm extends ConfigBase implements Serializable {
 	
 	protected String texture;
 	
+	private static final long serialVersionUID = 1L;
+	
 	/**
 	 * テクスチャ格納するところ
 	 */

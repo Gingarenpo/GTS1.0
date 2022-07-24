@@ -4,6 +4,7 @@ import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.core.GTSTileEntity;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
@@ -19,6 +20,8 @@ import java.io.*;
  * 動的ﾃｸｽﾁｬをとにかく大量に生成するためメモリ不足で落ちるかもしれない
  */
 public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, Serializable {
+	
+	private static final long serialVersionUID = 1L;
 	
 	private ModelTrafficLight addon = null; // この信号機が一体どの種類のモデルを使うのか。基本的に必ず何かしらが入るはず
 	private TrafficLight data = null; // この信号機のデータ
@@ -42,13 +45,24 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 	 *
 	 * 普通ありえないがファイルが見つからない場合は例外出しまくるので判断してください。
 	 */
-	private void setDummyModel() {
+	public void setDummyModel() {
 		try {
 			DummyConfigTrafficLight config = new DummyConfigTrafficLight();
-			addon = new ModelTrafficLight(config, new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/dummy/dummy_tl.mqo")).getInputStream()));
+			addon = new ModelTrafficLight(config, new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/dummy/dummy_tl.mqo")).getInputStream()), null);
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * ダミーのテクスチャを貼り付けるメソッド。
+	 * OpenGLのレンダー内で使用しないといけない。
+	 */
+	public void setDummyTexture() {
+		addon.baseTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("_base", new DynamicTexture(addon.getConfig().getTextures().getBaseTex()));
+		addon.lightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("_light", new DynamicTexture(addon.getConfig().getTextures().getBaseTex()));
+		addon.noLightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation( "_nolight", new DynamicTexture(addon.getConfig().getTextures().getBaseTex()));
 	}
 	
 	
@@ -80,10 +94,21 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 		
 		// Model、Dataの順で格納されている（バイト列）
 		byte[] byteData = compound.getByteArray("gts_tl_data");
+		byte[] byteData2 = compound.getByteArray("gts_tl_addon");
 		
 		try (ByteArrayInputStream bais = new ByteArrayInputStream(byteData)) {
 			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
 				this.data = (TrafficLight) ois.readObject();
+			}
+		} catch (IOException | ClassNotFoundException e) {
+			// メモリ不足などでストリームを確保できなかった場合、あるいはオブジェクトが正しく読み込まれなかった時
+			GTS.GTSLog.log(Level.DEBUG, "Can't load data object Phase1[model](Maybe out of memory or data == null) -> " + e.getMessage());
+		}
+		
+		try (ByteArrayInputStream bais = new ByteArrayInputStream(byteData2)) {
+			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
+				this.addon.setConfig((ConfigTrafficLight) ois.readObject());
+				this.addon.reloadModel();
 			}
 		} catch (IOException | ClassNotFoundException e) {
 			// メモリ不足などでストリームを確保できなかった場合、あるいはオブジェクトが正しく読み込まれなかった時
@@ -101,12 +126,22 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 		
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-				oos.writeObject(this.data); // アドオンの情報を書き込む
+				oos.writeObject(this.data); // TrafficLightの情報を書き込む
 				c.setByteArray("gts_tl_data", baos.toByteArray()); // バイト列にしてタグに書き込み
 			}
 		} catch (IOException e) {
 			// メモリ不足などでストリームを確保できなかった場合
-			GTS.GTSLog.log(Level.ERROR, "Can't write data object Phase2[Data](Maybe out of memory) -> " + e.getMessage());
+			GTS.GTSLog.log(Level.ERROR, "Can't write data object Phase1[Data](Maybe out of memory) -> " + e.getMessage());
+		}
+		
+		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+			try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+				oos.writeObject(this.addon.getConfig()); // アドオンのコンフィグだけ書き込む
+				c.setByteArray("gts_tl_addon", baos.toByteArray()); // バイト列にしてタグに書き込み
+			}
+		} catch (IOException e) {
+			// メモリ不足などでストリームを確保できなかった場合
+			GTS.GTSLog.log(Level.ERROR, "Can't write data object Phase2[Addon](Maybe out of memory) -> " + e.getMessage());
 		}
 		
 		compound.setDouble("gts_tl_angle", this.angle);

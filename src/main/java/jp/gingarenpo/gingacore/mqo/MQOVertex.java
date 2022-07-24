@@ -8,6 +8,8 @@ import java.io.Serializable;
  * @author 銀河連邦
  */
 public class MQOVertex implements Serializable, Cloneable {
+	
+	private static final long serialVersionUID = 1L;
 
 	private double x;
 	private double y;

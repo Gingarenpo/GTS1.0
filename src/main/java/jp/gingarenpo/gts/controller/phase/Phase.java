@@ -23,6 +23,8 @@ import java.util.LinkedHashMap;
  */
 public abstract class Phase implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+	
 	/**
 	 * このフェーズの名称。
 	 */

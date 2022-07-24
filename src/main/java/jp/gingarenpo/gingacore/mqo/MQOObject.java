@@ -12,6 +12,8 @@ import java.util.ArrayList;
  */
 public class MQOObject implements Serializable, Cloneable {
 	
+	private static final long serialVersionUID = 1L;
+	
 	// モデルの面（フェイス）
 	ArrayList<MQOFace> face = new ArrayList<MQOFace>(); // 面を番号ごとに格納
 	

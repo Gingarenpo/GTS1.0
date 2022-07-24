@@ -9,6 +9,8 @@ import jp.gingarenpo.gts.core.ModelBase;
  */
 public class ModelTrafficArm extends ModelBase<ConfigTrafficArm> {
 	
+	private static final long serialVersionUID = 1L;
+	
 	public ModelTrafficArm(ConfigTrafficArm config, MQO model) {
 		super();
 		this.config = config;

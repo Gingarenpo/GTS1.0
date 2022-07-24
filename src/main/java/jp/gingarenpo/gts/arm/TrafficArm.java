@@ -16,6 +16,8 @@ import java.util.ArrayList;
  */
 public class TrafficArm implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+	
 	/**
 	 * このアームの使用モデル。
 	 */
