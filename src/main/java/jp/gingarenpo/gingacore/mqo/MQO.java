@@ -265,7 +265,7 @@ public class MQO implements Serializable, Cloneable {
 		double[][] minmax = original.getMinMaxPosition(object);
 		
 		// ここで、正規化する前の最大・最小座標が入る
-		System.out.println("正規化前座標最小XYZ: " + minmax[0][0] + ", " + minmax[0][1] + ", " + minmax[0][2] + ", 最大XYZ: " + minmax[1][0] + ", " + minmax[1][1] + ", " + minmax[1][2]);
+		//System.out.println("正規化前座標最小XYZ: " + minmax[0][0] + ", " + minmax[0][1] + ", " + minmax[0][2] + ", 最大XYZ: " + minmax[1][0] + ", " + minmax[1][1] + ", " + minmax[1][2]);
 		
 		// 次に、サイズに最適化するための係数を算出する
 		// XYZそれぞれの距離を算出する
@@ -289,7 +289,7 @@ public class MQO implements Serializable, Cloneable {
 		minmax = original.getMinMaxPosition(object);
 		
 		// 処理終了（faceの方には頂点番号しか格納していないので弄る必要がない）
-		System.out.println("正規化後座標最小XYZ: " + minmax[0][0] + ", " + minmax[0][1] + ", " + minmax[0][2] + ", 最大XYZ: " + minmax[1][0] + ", " + minmax[1][1] + ", " + minmax[1][2]);
+		//System.out.println("正規化後座標最小XYZ: " + minmax[0][0] + ", " + minmax[0][1] + ", " + minmax[0][2] + ", 最大XYZ: " + minmax[1][0] + ", " + minmax[1][1] + ", " + minmax[1][2]);
 		return original;
 	}
 	

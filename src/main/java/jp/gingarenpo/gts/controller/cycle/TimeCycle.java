@@ -34,11 +34,22 @@ public class TimeCycle extends Cycle {
 		this.to = to;
 	}
 	
+	public TimeCycle(int from, int to) {
+		super();
+		this.from = from;
+		this.to = to;
+	}
 	public int getFrom() {
 		return from;
 	}
 	
-	public void setFrom(int from) {
+	public void setFrom(int from) throws IllegalArgumentException {
+		if (from < 0) {
+			throw new IllegalArgumentException("From cannot negative");
+		}
+		else if (from > to) {
+			throw new IllegalArgumentException("From value is greater than To");
+		}
 		this.from = from;
 	}
 	
@@ -46,20 +57,31 @@ public class TimeCycle extends Cycle {
 		return to;
 	}
 	
-	public void setTo(int to) {
+	public void setTo(int to) throws IllegalArgumentException {
+		if (to < 0) {
+			throw new IllegalArgumentException("To cannot negative");
+		}
+		else if (from > to) {
+			throw new IllegalArgumentException("From value is greater than To");
+		}
 		this.to = to;
 	}
 	
 	@Override
 	public boolean canStart(World world, TrafficController controller, boolean detected) {
+		
+		
 		// 正規化とかは今後対応予定
-		if (from < world.getTotalWorldTime() % 24000) {
-			// 開始時刻より前の場合
-			if (to / 24000 > 1 && to % 24000 < world.getTotalWorldTime() % 24000) {
-				// 終了時刻が翌日に跨る場合で現在時刻がその終了時刻を超えている場合
-				return false;
-			}
+		if (from < world.getWorldTime() % 24000 && world.getWorldTime() % 24000 < to) {
+			// 問答無用でtrue
+			return true;
 		}
-		return true;
+		
+		// Toに30000とか入れると24000+6000で翌日扱いする（fromはムリ）
+		if (to % 24000 > 0 && to % 24000 > world.getWorldTime() % 24000) {
+			return true;
+		}
+		
+		return false;
 	}
 }

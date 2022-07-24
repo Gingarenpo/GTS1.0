@@ -1,9 +1,6 @@
 package jp.gingarenpo.gts.controller;
 
 import jp.gingarenpo.gts.controller.cycle.Cycle;
-import jp.gingarenpo.gts.controller.cycle.TimeCycle;
-import jp.gingarenpo.gts.controller.phase.PhaseBase;
-import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -82,30 +79,7 @@ public class TrafficController implements Serializable {
 	 */
 	public TrafficController() {
 		this(new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime()) + RandomStringUtils.randomAlphanumeric(24));
-		// TODO:デバッグ用。いずれ消す↓
-		Cycle cycle = new TimeCycle("default_cycle", 0, 12000);
-		ArrayList object = new ArrayList();
-		object.add("g300");
-		cycle.addPhase(new PhaseBase("default", 20).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("green")));
-		object = new ArrayList();
-		object.add("y300");
-		cycle.addPhase(new PhaseBase("default2", 20).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("yellow")));
-		object = new ArrayList();
-		object.add("r300");
-		cycle.addPhase(new PhaseBase("default3", 20).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("red")));
-		cycles.put("default_cycle", cycle);
 		
-		Cycle cycle2 = new TimeCycle("default_cycle2", 12001, 24000);
-		ArrayList object2 = new ArrayList();
-		object2.add("g300");
-		cycle2.addPhase(new PhaseBase("default", 5).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("green")));
-		object2 = new ArrayList();
-		object2.add("y300");
-		cycle2.addPhase(new PhaseBase("default2", 5).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("yellow")));
-		object2 = new ArrayList();
-		object2.add("r300");
-		cycle2.addPhase(new PhaseBase("default3", 5).addChannel(1, new ConfigTrafficLight.LightObject().setObjects(object).setName("red")));
-		cycles.put("default_cycle2", cycle2);
 	}
 	
 	/**

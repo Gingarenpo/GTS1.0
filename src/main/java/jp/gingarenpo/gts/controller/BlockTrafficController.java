@@ -169,6 +169,7 @@ public class BlockTrafficController extends BlockContainer {
 				worldIn.notifyBlockUpdate(pos, worldIn.getBlockState(pos), worldIn.getBlockState(pos), 3);
 				te.markDirty();
 				GTS.window = null; // 元に戻す
+				
 			}
 		});
 		return true;

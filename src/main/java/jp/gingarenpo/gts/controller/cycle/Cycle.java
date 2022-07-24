@@ -144,8 +144,12 @@ public class Cycle implements Serializable {
 	 */
 	public Phase getNowPhase() {
 		try {
+			if (this.nowPhase > this.phases.size()) {
+				this.nowPhase = 0; // 辻褄が合わない場合は強制的に戻す
+			}
 			return phases.get(this.nowPhase);
-		} catch (ArrayIndexOutOfBoundsException e) {
+		} catch (IndexOutOfBoundsException e) {
+			e.printStackTrace();
 			return null;
 		}
 	}

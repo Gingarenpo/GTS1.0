@@ -1,12 +1,16 @@
 package jp.gingarenpo.gts.controller.phase;
 
 import jp.gingarenpo.gts.controller.TrafficController;
-import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.exception.DataExistException;
+import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import net.minecraft.world.World;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 /**
  * サイクルに登録すべき信号の状態を格納したフェーズという状態を保持するクラス。
@@ -28,7 +32,7 @@ public abstract class Phase implements Serializable {
 	 * 各チャンネル毎にどの信号を光らせるかを指定するハッシュマップ。
 	 * チャンネル番号は1から指定可能。それ以外は登録不可。ArrayListだとlong使えないみたいなので
 	 */
-	protected HashMap<Long, ConfigTrafficLight.LightObject> channels = new HashMap<Long, ConfigTrafficLight.LightObject>();
+	protected LinkedHashMap<Long, ConfigTrafficLight.LightObject> channels = new LinkedHashMap<Long, ConfigTrafficLight.LightObject>();
 	
 	/**
 	 * このフェーズが開始してからの総Tick数を保持する。
@@ -41,6 +45,13 @@ public abstract class Phase implements Serializable {
 	 */
 	public Phase(String name) {
 		this.name = name;
+	}
+	
+	/**
+	 * ランダムな文字列を使用してフェーズを作成する.
+	 */
+	public Phase() {
+		this(new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime()) + RandomStringUtils.randomAlphanumeric(24));
 	}
 	
 	/**
@@ -146,4 +157,8 @@ public abstract class Phase implements Serializable {
 	 * @return このフェーズを続行するべきならばtrue、終了ならばfalse
 	 */
 	public abstract boolean shouldContinue(TrafficController controller, long totalTicks, boolean detected, World world);
+	
+	public HashMap<Long, ConfigTrafficLight.LightObject> getChannels() {
+		return channels;
+	}
 }

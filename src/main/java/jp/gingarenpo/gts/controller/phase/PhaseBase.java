@@ -24,9 +24,22 @@ public class PhaseBase extends Phase {
 		this.continueTick = continueTick;
 	}
 	
+	public PhaseBase(int continueTick) {
+		super();
+		this.continueTick = continueTick;
+	}
+	
 	@Override
 	public boolean shouldContinue(TrafficController controller, long totalTicks, boolean detected, World world) {
 		if (ticks > continueTick) return false;
 		return true;
+	}
+	
+	public int getContinueTick() {
+		return continueTick;
+	}
+	
+	public void setContinueTick(int continueTick) {
+		this.continueTick = continueTick;
 	}
 }
