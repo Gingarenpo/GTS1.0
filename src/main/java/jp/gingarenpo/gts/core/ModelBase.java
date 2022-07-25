@@ -22,7 +22,7 @@ public abstract class ModelBase<T extends ConfigBase> implements Serializable {
 	/**
 	 * モデル。
 	 */
-	protected MQO model;
+	protected MQO model; // 重いのでこれはシリアライズ非対象
 	
 	/**
 	 * パックのロケーション。
@@ -81,10 +81,8 @@ public abstract class ModelBase<T extends ConfigBase> implements Serializable {
 	public void reloadModel() {
 		// Loaderからモデル読み込み
 		if (GTS.loader == null || GTS.loader.getPacks() == null || file == null) {
-			GTS.GTSLog.warn(String.format("%s / %s / %s / %s", this, GTS.loader, GTS.loader.getPacks(), file));
 			return;
 		}
-		GTS.GTSLog.info(this);
 		for (ModelBase m: GTS.loader.getPacks().get(file).getModels()) {
 			if (m.getConfig().getModel().equals(getConfig().getModel())) {
 				// 同じモデルがあれば

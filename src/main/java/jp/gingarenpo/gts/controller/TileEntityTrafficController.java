@@ -269,7 +269,6 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 		// クライアント側から全方向に向けてパケット発射（クライアント→パケット）
 		if (this.world == null) return; // Nullの場合は発信できない
 		if (!this.world.isRemote) {
-			System.out.println(this);
 			this.createTexture();
 			GTS.MOD_NETWORK.sendToAll(new PacketTrafficController(this)); // 強制送信
 		}

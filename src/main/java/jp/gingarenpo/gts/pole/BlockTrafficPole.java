@@ -174,8 +174,8 @@ public class BlockTrafficPole extends BlockContainer {
 		if (world.isRemote) return;
 		TileEntity top = world.getTileEntity(pos.up()); // 上部を取得
 		TileEntity down = world.getTileEntity(pos.down()); // 下部を取得
-		System.out.println(top);
-		System.out.println(down);
+		//System.out.println(top);
+		//System.out.println(down);
 		if (top == null && down == null) self.setBottom(true); // 単独の場合は下部扱いとする
 		else if (top instanceof TileEntityTrafficPole && !(down instanceof TileEntityTrafficPole)) {
 			// 上につながっているだけなので下部扱いとする

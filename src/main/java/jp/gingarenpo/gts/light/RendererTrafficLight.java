@@ -38,6 +38,12 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		
 		if (te.getAddon() == null) return; // アドオンがまだ読み込まれていない場合（ダミーでも）は抜ける
 		
+		if (te.getAddon().getModel() == null) {
+			// モデルを再生成
+			te.getAddon().reloadModel();
+		}
+
+		
 		if (te.getAddon().baseTex == null) {
 			// baseだけ抜け落ちるってことはないので
 			if (te.getAddon().getFile() == null) {

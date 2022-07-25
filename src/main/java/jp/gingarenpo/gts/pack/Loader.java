@@ -1,8 +1,7 @@
 package jp.gingarenpo.gts.pack;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.core.ConfigBase;
@@ -26,6 +25,8 @@ import java.util.zip.ZipInputStream;
 /**
  * GTSのパックのみを読み込むためのクラス。読み込んだパックのFileインスタンスを保持する。
  * ZipFileは必要に応じて開くこと（こればかりだとメモリが大変なことになるため）
+ *
+ * Jackson死ぬので既存のGsonを使ってみる
  */
 public class Loader {
 	
@@ -130,26 +131,24 @@ public class Loader {
 					
 					if (entry.getName().endsWith("json")) {
 						// JSONファイルだった場合は設定ファイルかもしれないのでチェックする
-						ObjectMapper om = new ObjectMapper();
+						Gson g = new Gson();
 						try (ByteArrayOutputStream baos = new ByteArrayOutputStream(Math.toIntExact(entry.getSize()))) {
 							byte[] tmp = new byte[Math.toIntExact(entry.getSize())];
 							zis.read(tmp);
 							baos.write(tmp); // こうしないとJacksonがZipストリームを閉じてしまう
-							ConfigTrafficLight c = om.readValue(new ByteArrayInputStream(baos.toByteArray()), ConfigTrafficLight.class); // コンフィグとして読み込みを試みる
+							ConfigTrafficLight c = g.fromJson(baos.toString(), ConfigTrafficLight.class);
+							// ConfigTrafficLight c = om.readValue(new ByteArrayInputStream(baos.toByteArray()), ConfigTrafficLight.class); // コンフィグとして読み込みを試みる
 							configs.add(c); // 追加
-						} catch (JsonParseException e) {
-							// そもそもJSONとして不適切な場合
-							GTS.GTSLog.log(Level.WARN, entry.getName() + " is not a JSON File. It was skipped. -> " + e.getMessage() );
-						} catch (JsonMappingException e) {
+						} catch (JsonSyntaxException e) {
 							// JSONに適切にマッピングできなかった場合
 							// ポールでやってみる
 							try (ByteArrayOutputStream baos = new ByteArrayOutputStream(Math.toIntExact(entry.getSize()))) {
 								byte[] tmp = new byte[Math.toIntExact(entry.getSize())];
 								zis.read(tmp);
 								baos.write(tmp); // こうしないとJacksonがZipストリームを閉じてしまう
-								ConfigTrafficPole c = om.readValue(new ByteArrayInputStream(baos.toByteArray()), ConfigTrafficPole.class);
+								ConfigTrafficPole c = g.fromJson(baos.toString(), ConfigTrafficPole.class);
 								configs.add(c);
-							} catch (JsonMappingException e2) {
+							} catch (JsonSyntaxException e2) {
 								// それでもダメな場合
 								GTS.GTSLog.log(Level.WARN, entry.getName() + " is not a available GTS Pack Config. It was skipped. -> " + e.getMessage() );
 							}

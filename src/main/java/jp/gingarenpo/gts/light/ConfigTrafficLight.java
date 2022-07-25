@@ -1,13 +1,12 @@
 package jp.gingarenpo.gts.light;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
+
 import jp.gingarenpo.gts.core.ConfigBase;
 
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -16,8 +15,6 @@ import java.util.Objects;
  *
  * 存在しないプロパティが出てきても無視！
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ConfigTrafficLight extends ConfigBase implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
@@ -35,7 +32,18 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 		// JSONデシリアライズの為に必要
 	}
 	
-	
+	@Override
+	public String toString() {
+		return "ConfigTrafficLight{" +
+					   "textures=" + textures +
+					   ", body=" + body +
+					   ", light=" + light +
+					   ", patterns=" + patterns +
+					   ", showBoth=" + showBoth +
+					   ", centerPosition=" + Arrays.toString(centerPosition) +
+					   ", size=" + size +
+					   '}';
+	}
 	
 	public TexturePath getTextures() {
 		return textures;
@@ -118,11 +126,11 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 		private String light; // 発光部分のテクスチャで、点灯した際のもの。未指定の場合はベースのテクスチャが使われる。
 		private String noLight; // 未点灯状態の発光部分テクスチャ。こちらは任意で、指定がない場合はlightと同じものが使われる。
 		
-		@JsonIgnore
+
 		private transient BufferedImage baseTex; // ベースのテクスチャの画像（ゲーム中には変更不可！）
-		@JsonIgnore
+
 		private transient BufferedImage lightTex; // 発光部分のテクスチャ画像
-		@JsonIgnore
+
 		private transient BufferedImage noLightTex; // 未発光部分のテクスチャ画像
 		
 		private byte[] baseTexByte;

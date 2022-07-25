@@ -10,6 +10,7 @@ import net.minecraft.util.ResourceLocation;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -24,7 +25,14 @@ public class ModelTrafficLight extends ModelBase<ConfigTrafficLight> implements 
 	public ResourceLocation noLightTex; // それぞれテクスチャ
 	
 	public ModelTrafficLight(ConfigTrafficLight config, MQO model, File file) {
-		super(config, model, file);
+		this.config = config;
+		this.file = file;
+		
+		// 描画対象オブジェクトのみを対象として正規化をかける
+		ArrayList<String> objects = new ArrayList<>();
+		objects.addAll(config.getBody());
+		objects.addAll(config.getLight());
+		this.model = model.normalize(config.getSize(), objects);
 	}
 	
 	/**
@@ -70,5 +78,17 @@ public class ModelTrafficLight extends ModelBase<ConfigTrafficLight> implements 
 			GTS.GTSLog.warn("Warning. nolight texture is null. It may be not exist pack.");
 		}
 		
+	}
+	
+	@Override
+	public String toString() {
+		return "ModelTrafficLight{" +
+					   "config=" + config +
+					   ", model=" + model +
+					   ", file=" + file +
+					   ", baseTex=" + baseTex +
+					   ", lightTex=" + lightTex +
+					   ", noLightTex=" + noLightTex +
+					   '}';
 	}
 }

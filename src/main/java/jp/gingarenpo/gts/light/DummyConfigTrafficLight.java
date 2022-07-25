@@ -39,7 +39,6 @@ public class DummyConfigTrafficLight extends ConfigTrafficLight {
 		b.add("g");
 		b.add("y");
 		b.add("r");
-		b.add("obj1");
 		this.setBody(b);
 		
 		// 点灯部分指定

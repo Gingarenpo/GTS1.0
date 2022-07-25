@@ -121,6 +121,7 @@ public class SwingGUITrafficLight extends JFrame {
 				return; // 何もしません
 			}
 			this.tetl.setAddon(model);
+			this.tetl.getAddon().baseTex = null; // 強制再描画
 			setTitle(String.format("モデルを変更しました"));
 			this.tetl.markDirty();
 		});

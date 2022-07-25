@@ -26,7 +26,7 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 	private ModelTrafficLight addon = null; // この信号機が一体どの種類のモデルを使うのか。基本的に必ず何かしらが入るはず
 	private TrafficLight data = null; // この信号機のデータ
 	private double angle = 0.0f; // 設置された向き（角度）
-	
+
 	
 	/**
 	 * true入れようがfalse入れようがダミーが入る
@@ -84,6 +84,8 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 	}
 	
 	
+	
+	
 	/**
 	 * NBTタグから情報を取り出し、このTileEntityに保管する。
 	 * @param compound
@@ -94,7 +96,8 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 		
 		// Model、Dataの順で格納されている（バイト列）
 		byte[] byteData = compound.getByteArray("gts_tl_data");
-		byte[] byteData2 = compound.getByteArray("gts_tl_addon");
+		byte[] byteData2 = compound.getByteArray("gts_tl_config");
+		byte[] byteData3 = compound.getByteArray("gts_tl_file");
 		
 		try (ByteArrayInputStream bais = new ByteArrayInputStream(byteData)) {
 			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
@@ -108,12 +111,31 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 		try (ByteArrayInputStream bais = new ByteArrayInputStream(byteData2)) {
 			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
 				this.addon.setConfig((ConfigTrafficLight) ois.readObject());
+			}
+		} catch (IOException | ClassNotFoundException e) {
+			// メモリ不足などでストリームを確保できなかった場合、あるいはオブジェクトが正しく読み込まれなかった時
+			GTS.GTSLog.log(Level.DEBUG, "Can't load data object Phase2[config](Maybe out of memory or data == null) -> " + e.getMessage());
+		}
+		
+		try (ByteArrayInputStream bais = new ByteArrayInputStream(byteData3)) {
+			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
+				this.addon.setFile((File) ois.readObject());
 				this.addon.reloadModel();
 			}
 		} catch (IOException | ClassNotFoundException e) {
 			// メモリ不足などでストリームを確保できなかった場合、あるいはオブジェクトが正しく読み込まれなかった時
-			GTS.GTSLog.log(Level.DEBUG, "Can't load data object Phase1[model](Maybe out of memory or data == null) -> " + e.getMessage());
+			GTS.GTSLog.log(Level.DEBUG, "Can't load data object Phase3[File](Maybe out of memory or data == null) -> " + e.getMessage());
 		}
+		
+		// リソースロケーションはこうしないとシリアライズできないらしいので
+		if (compound.hasKey("gts_tl_basetex_location")) {
+			this.addon.baseTex = new ResourceLocation(compound.getString("gtc_tl_basetex_location"));
+		}
+		else {
+			this.addon.baseTex = null;
+		}
+		
+		
 		
 		if (compound.hasKey("gts_tl_angle")) {
 			this.angle = compound.getDouble("gts_tl_angle");
@@ -137,12 +159,29 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
 				oos.writeObject(this.addon.getConfig()); // アドオンのコンフィグだけ書き込む
-				c.setByteArray("gts_tl_addon", baos.toByteArray()); // バイト列にしてタグに書き込み
+				c.setByteArray("gts_tl_config", baos.toByteArray()); // バイト列にしてタグに書き込み
 			}
 		} catch (IOException e) {
 			// メモリ不足などでストリームを確保できなかった場合
-			GTS.GTSLog.log(Level.ERROR, "Can't write data object Phase2[Addon](Maybe out of memory) -> " + e.getMessage());
+			GTS.GTSLog.log(Level.ERROR, "Can't write data object Phase2[Config](Maybe out of memory) -> " + e.getMessage());
 		}
+		
+		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+			try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+				oos.writeObject(this.addon.getFile()); // アドオンのコンフィグだけ書き込む
+				c.setByteArray("gts_tl_file", baos.toByteArray()); // バイト列にしてタグに書き込み
+			}
+		} catch (IOException e) {
+			// メモリ不足などでストリームを確保できなかった場合
+			GTS.GTSLog.log(Level.ERROR, "Can't write data object Phase2[File](Maybe out of memory) -> " + e.getMessage());
+		}
+		
+		// ロケーションを送る
+		if (this.getAddon().baseTex != null) {
+			compound.setString("gts_tl_basetex_location", this.addon.baseTex.getPath());
+		}
+		
+		
 		
 		compound.setDouble("gts_tl_angle", this.angle);
 		

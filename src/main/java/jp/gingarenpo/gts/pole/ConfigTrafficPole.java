@@ -1,6 +1,5 @@
 package jp.gingarenpo.gts.pole;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jp.gingarenpo.gts.core.ConfigBase;
 
 import java.awt.image.BufferedImage;
@@ -23,7 +22,6 @@ public class ConfigTrafficPole extends ConfigBase implements Serializable {
 	/**
 	 * テクスチャの実際の中身。
 	 */
-	@JsonIgnore
 	private transient BufferedImage texImage;
 	
 	/**

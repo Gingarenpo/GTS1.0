@@ -117,7 +117,7 @@ public class BlockTrafficLight extends BlockContainer {
 		}
 		// 角度情報を入れる
 		EntityPlayer ep = (EntityPlayer) placer;
-		System.out.println(GMathHelper.normalizeAngle(-ep.getPitchYaw().y + 180));
+		// System.out.println(GMathHelper.normalizeAngle(-ep.getPitchYaw().y + 180));
 		te.setAngle(GMathHelper.normalizeAngle(-ep.getPitchYaw().y + 180)); // プレイヤーと逆向きに配置
 	}
 	
@@ -154,8 +154,9 @@ public class BlockTrafficLight extends BlockContainer {
 			public void windowClosed(WindowEvent e) {
 				// 反映させる
 				((TileEntityTrafficLight) te).getAddon().reloadModel();
+				((TileEntityTrafficLight) te).getAddon().baseTex = null; // クライアント側で強制再生成させる
 				playerIn.closeScreen(); // GUI閉じる
-				worldIn.notifyBlockUpdate(pos, worldIn.getBlockState(pos), worldIn.getBlockState(pos), 2);
+				worldIn.notifyBlockUpdate(pos, worldIn.getBlockState(pos), worldIn.getBlockState(pos), 3);
 				GTS.window = null;
 			}
 		});
