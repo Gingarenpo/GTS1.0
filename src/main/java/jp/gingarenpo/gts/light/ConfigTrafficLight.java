@@ -7,7 +7,6 @@ import java.awt.image.BufferedImage;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Objects;
 
 /**
  * RTMに近い形で、JSON形式のオブジェクトとしてマッピングするためのクラス。
@@ -25,6 +24,7 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 	private ArrayList<String> light; // 点灯パーツ
 	private ArrayList<LightObject> patterns = new ArrayList<LightObject>(); // 光るパターンを列挙する。ここを動的にすると存在しないパターン名が出てきたとき困るけどそこは考える。RYRとかどうするんだって話ありますし
 	private boolean showBoth = true; // これをfalseにすると、「_back」とつけられたオブジェクトを背面灯器と認識し描画しなくなる（ようにしたいために予約）。指定しないとtrue
+	private float opacity = 0.1f; // 光っていない部分の暗くなる比率。デフォルトほぼ真っ暗。値を大きくすればするほど明るくなる。
 	
 	private double[] centerPosition = new double[3]; // モデルの中心ずらし位置。初期値0。XYZで指定、ブロックの1辺＝1とする
 	
@@ -115,6 +115,14 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 	
 	public double getCenterPositionZ() {
 		return this.centerPosition[2];
+	}
+	
+	public float getOpacity() {
+		return opacity;
+	}
+	
+	public void setOpacity(float opacity) {
+		this.opacity = opacity;
 	}
 	
 	/**
@@ -234,7 +242,7 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 		 */
 		public boolean isNoLight(long tick) {
 			if (this.tick == 0) return false;
-			return Math.floorDiv(tick, this.tick) % 2 == 1; // 点滅は点灯状態から始まり指定したTickの時消灯している場合は結果が奇数となる
+			return Math.floorDiv(tick, this.tick / 2) % 2 == 1; // 点滅は点灯状態から始まり指定したTickの時消灯している場合は結果が奇数となる
 		}
 		
 		@Override
@@ -243,7 +251,7 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 		}
 		
 		/**
-		 * インスタンスを複数生成する場合があるので名前の一致とオブジェクトの一致で判断する
+		 * インスタンスを複数生成する場合があるので名前の一致で判断する
 		 * @param obj
 		 * @return
 		 */
@@ -252,7 +260,9 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 			if (!(obj instanceof LightObject)) return false;
 			LightObject other = (LightObject) obj;
 			if (!other.getName().equals(this.name)) return false;
-			return Objects.equals(other.objects, this.objects);
+			return true;
 		}
+		
+		
 	}
 }

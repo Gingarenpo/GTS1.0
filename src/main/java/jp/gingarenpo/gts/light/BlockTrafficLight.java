@@ -148,13 +148,14 @@ public class BlockTrafficLight extends BlockContainer {
 		if (!(te instanceof TileEntityTrafficLight)) return false; // TileEntityない
 		
 		// GUI開く
+		if (GTS.window != null) return false;
 		GTS.window = new SwingGUITrafficLight((TileEntityTrafficLight) te); // OPEN
 		GTS.window.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosed(WindowEvent e) {
 				// 反映させる
 				((TileEntityTrafficLight) te).getAddon().reloadModel();
-				((TileEntityTrafficLight) te).getAddon().baseTex = null; // クライアント側で強制再生成させる
+				((TileEntityTrafficLight) te).getAddon().reloadTexture();
 				playerIn.closeScreen(); // GUI閉じる
 				worldIn.notifyBlockUpdate(pos, worldIn.getBlockState(pos), worldIn.getBlockState(pos), 3);
 				GTS.window = null;

@@ -15,7 +15,8 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Objects;
 
 /**
  * 交通信号機のチャンネルとモデルパックを選択するためのGUIを開くやつ。
@@ -91,7 +92,7 @@ public class SwingGUITrafficLight extends JFrame {
 		this.getContentPane().add(t1);
 		
 		// モデルパックの設定
-		HashMap<String, ModelTrafficLight> models = new HashMap<>();
+		LinkedHashMap<String, ModelTrafficLight> models = new LinkedHashMap<>();
 		models.put("【組込】DUMMY（通常選べません）", null);
 		int index = 0;
 		int i = 1;
@@ -103,15 +104,21 @@ public class SwingGUITrafficLight extends JFrame {
 					i++;
 					continue;
 				}
+				
 				models.put(getChoiceName(pack, (ModelTrafficLight) model), (ModelTrafficLight) model);
-				index = i;
+				
+				if (Objects.equals(model, this.model)) {
+					GTS.GTSLog.info("found.");
+					index = i;
+				}
 				i++;
 			}
 		}
+		System.out.println(i);
 		
 		
 		// モデルパック選択肢を表示
-		JComboBox<String> c1 = new JComboBox(models.keySet().toArray(new String[0]));
+		JComboBox<String> c1 = new JComboBox(models.keySet().toArray());
 		c1.setBounds(5, 75, width - 10, 20);
 		c1.setSelectedIndex(index);
 		c1.addActionListener((e) -> {
@@ -121,7 +128,7 @@ public class SwingGUITrafficLight extends JFrame {
 				return; // 何もしません
 			}
 			this.tetl.setAddon(model);
-			this.tetl.getAddon().baseTex = null; // 強制再描画
+			this.tetl.getAddon().reloadTexture();
 			setTitle(String.format("モデルを変更しました"));
 			this.tetl.markDirty();
 		});

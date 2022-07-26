@@ -1,22 +1,28 @@
 package jp.gingarenpo.gts.light;
 
 import jp.gingarenpo.gingacore.mqo.MQOObject;
+import jp.gingarenpo.gts.GTS;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
-import java.util.Objects;
 
 /**
  * 信号機を実際に描画するレンダラー
  */
 public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTrafficLight> {
 	
-	
+	// ロケーションはサーバーに保持しても意味がない
+	private ResourceLocation baseTex;
+	private ResourceLocation lightTex;
+	private ResourceLocation noLightTex;
 	
 	
 	/**
@@ -34,36 +40,48 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 	public void render(TileEntityTrafficLight te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
 		super.render(te, x, y, z, partialTicks, destroyStage, alpha); // 一応
 		// long time = System.currentTimeMillis();
-
 		
-		if (te.getAddon() == null) return; // アドオンがまだ読み込まれていない場合（ダミーでも）は抜ける
-		
-		if (te.getAddon().getModel() == null) {
-			// モデルを再生成
-			te.getAddon().reloadModel();
+		if (te.getAddon() == null  || te.getAddon().getModel() == null) {
+			// モデルがない場合や描画できない場合
+			GTS.GTSLog.warn("Warning. Cannot render model because model is null or not ready to render.");
+			return;
 		}
+		
 
 		
-		if (te.getAddon().baseTex == null) {
-			// baseだけ抜け落ちるってことはないので
+		if (te.getAddon().getConfig().getTextures().getBaseTex() == null || te.getAddon().isNeedChangeTex()) {
+			// そもそもテクスチャが用意されていない、あるいは変更が要求された
 			if (te.getAddon().getFile() == null) {
+				// ダミーを代わりに入れる
 				te.setDummyModel();
-				te.setDummyTexture();
 			}
-			else {
-				te.getAddon().redrawTexture(); // テクスチャを再生成する
-			}
-			te.markDirty();
+			te.getAddon().reloadTexture(); // リロード
+			baseTex = null;
+			lightTex = null;
+			noLightTex = null;
+			te.getAddon().doneChangeTex();
+		}
+		
+		if (baseTex == null) {
+			// 新しくDynamicTextureを用意する
+			baseTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(te.getAddon().getConfig().getId() + "_base", new DynamicTexture(te.getAddon().getConfig().getTextures().getBaseTex()));
+		}
+		if (lightTex == null) {
+			// 新しくDynamicTextureを用意する
+			lightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(te.getAddon().getConfig().getId() + "_light", new DynamicTexture(te.getAddon().getConfig().getTextures().getLightTex()));
+		}
+		if (noLightTex == null) {
+			// 新しくDynamicTextureを用意する
+			noLightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(te.getAddon().getConfig().getId() + "_nolight", new DynamicTexture(te.getAddon().getConfig().getTextures().getNoLightTex()));
 		}
 		
 		// サイクルチェック
-		ConfigTrafficLight.LightObject lightObject = null; // 現在光っているオブジェクトを格納
+		ConfigTrafficLight.LightObject lightObject = null; // 現在光っているべきオブジェクトを格納
 		if (te.getData().getLight() != null) {
 			// 制御機の情報がまだ入っていない場合や入っていてもサイクルが設定されていない場合はとりあえず何もしない
 			// つまりここに来たら必ずサイクルがあり、今光っているものがあるはず
 			lightObject = te.getData().getLight();
 		}
-		
 		
 		
 		
@@ -81,53 +99,70 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		
 		// Tessellator 用意
 		Tessellator t = Tessellator.getInstance();
-		t.getBuffer().begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_COLOR);
 		
 		
-		// オブジェクト毎にループ
+		
+		// ベースオブジェクトと消灯オブジェクトの描画
 		for (MQOObject o: te.getAddon().getModel().getObjects4Loop()) {
+			
 			boolean render = false;
-			boolean nolight = false; // 光らないかどうか
-			// オブジェクト毎に繰り返す
+			boolean nolight = false; // 消灯か
+			// オブジェクト毎に繰り返すが
+			if (!te.getAddon().getConfig().getBody().contains(o.getName()) && !te.getAddon().getConfig().getLight().contains(o.getName())) {
+				// 描画対象ではない場合
+				continue;
+			}
 			if (te.getAddon().getConfig().getBody().contains(o.getName())) {
 				// このオブジェクトは無発光オブジェクトとして描画する
-				this.bindTexture(te.getAddon().baseTex);
 				render = true;
 			}
 			else {
-				// ライティングが必要な場合はちょっと変わる
+				// つまりgetLightから撮れるもの、あるいはゴミ
+				// 消灯しているものだけを取り出す
 				for (ConfigTrafficLight.LightObject l : te.getAddon().getConfig().getPatterns()) {
 					// 一致しない場合はスルー
 					if (!l.equals(lightObject)) continue;
 					// 発光するかしないかを指定（存在するかどうかで決める）
-					if (Objects.equals(l, lightObject) && l.getObjects().contains(o.getName())) {
-						continue;
+					if (l.getObjects().contains(o.getName())) {
+						// 発光オブジェクトの場合
+						if (l.isNoLight(te.getWorld().getWorldTime())) {
+							render = true;
+							nolight = true;
+							
+						}; // 点滅周期の場合はnolightとして描画
+						break;
 					}
-					else if (te.getAddon().getConfig().getLight().contains(o.getName())) {
+					else {
 						// 未発光オブジェクト確定
-						this.bindTexture(te.getAddon().noLightTex);
 						nolight = true;
 						render = true;
+						break;
 					}
-					
-					
-					
 				}
 			}
+			
 			
 			if (!render) {
 				// 描画の必要性がない場合
 				continue;
 			}
 			
+			t.getBuffer().begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_COLOR);
 			
 			// 実際に描画
-			float color = nolight ? 0.1f : 0.0f;
+			float color = nolight ? te.getAddon().getConfig().getOpacity() : 0.0f;
+			
+			// テクスチャのバインドを決める
+			this.bindTexture(nolight ? noLightTex : baseTex);
+			
 			o.draw(t.getBuffer(), color);
+			t.draw(); // ベース部分を描画
 			
 		}
 		
-		t.draw(); // ベース部分を描画
+		
+		
+		
 		t.getBuffer().begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_COLOR);
 		
 		for (MQOObject o: te.getAddon().getModel().getObjects4Loop()) {
@@ -139,22 +174,25 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 					// 一致しない場合はスルー
 					if (!l.equals(lightObject)) continue;
 					// 発光するかしないかを指定（存在するかどうかで決める）
-					if (Objects.equals(l, lightObject) && l.getObjects().contains(o.getName())) {
+					if (l.getObjects().contains(o.getName())) {
 						// 発光オブジェクト確定
-						this.bindTexture(te.getAddon().lightTex);
+						if (l.isNoLight(te.getWorld().getWorldTime())) continue; // 点滅時は無視
 						render = true;
 					}
 					
 				}
 			}
 			
-			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f); // 最高の明るさ
+			this.bindTexture(lightTex);
 			
 			if (!render) {
 				// 描画の必要性がない場合
 				continue;
 			}
 			
+			
+			
+			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f); // 最高の明るさ
 			
 			// 実際に描画
 			float color = 1.0f;

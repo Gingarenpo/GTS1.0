@@ -153,6 +153,7 @@ public class BlockTrafficController extends BlockContainer {
 	@Override
 	public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
 		// GUIを表示する（現在はSwing）
+		if (GTS.window != null) return false;
 		if (worldIn.isRemote) return false;
 		TileEntity te = worldIn.getTileEntity(pos);
 		if (!(te instanceof TileEntityTrafficController)) return false;
@@ -161,15 +162,18 @@ public class BlockTrafficController extends BlockContainer {
 		GTS.window = new SwingGUITrafficController(((TileEntityTrafficController) te).getData()); // GUI起動
 		GTS.window.setVisible(true);
 		GTS.window.addWindowListener(new WindowAdapter() {
+			
 			@Override
 			public void windowClosed(WindowEvent e) {
 				playerIn.closeScreen();
+				((TileEntityTrafficController) te).search(); // 信号機を更新する
 				worldIn.notifyBlockUpdate(pos, worldIn.getBlockState(pos), worldIn.getBlockState(pos), 3);
 				te.markDirty();
 				GTS.window = null; // 元に戻す
 				
 			}
 		});
+		System.out.println("あああ");
 		return true;
 	}
 }

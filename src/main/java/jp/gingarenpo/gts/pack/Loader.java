@@ -32,6 +32,7 @@ public class Loader {
 	
 	private HashMap<File, Pack> packs = new HashMap<>(); // パックの存在場所を示すもの。必ず存在する（ゲーム開始時点では）
 	private HashMap<File, HashMap<String, BufferedImage>> textures = new HashMap<>(); // テクスチャの存在を示すもの
+	private boolean completeLoad = false;
 	
 	public Loader() {
 		// 基本的にインスタンスを使うってよりはパックを保持するためだけなのでここでの記載なし
@@ -51,6 +52,16 @@ public class Loader {
 	 */
 	public HashMap<File, HashMap<String, BufferedImage>> getTextures() {
 		return textures;
+	}
+	
+	/**
+	 * ロードが完了している場合はtrueを返す。
+	 * この値がfalseである時は、まだロードが完了していないかエラーが発生したか、loadメソッドが呼ばれていない状況。
+	 * つまり、このメソッドがfalseを返すときはモデルやテクスチャの読み込みができる保証がない。
+	 * @return ロード完了していたらtrue
+	 */
+	public boolean isCompleteLoad() {
+		return completeLoad;
 	}
 	
 	/**
@@ -211,7 +222,7 @@ public class Loader {
 							config.getTextures().setNoLight(config.getTextures().getLight()); // 発光画像を使用する（発光画像もない場合は既にベース画像が使用されることになっている）
 						}
 						
-						// テクスチャをそれぞれ読み込む
+						// テクスチャをそれぞれ読み込む（ただし同じテクスチャの場合はスキップ）
 						ConfigTrafficLight.TexturePath t = config.getTextures(); // もうめんどくさいので一回読み込み
 						t.setBaseTex(textures.get(t.getBase()));
 						t.setLightTex(textures.get(t.getLight()));
@@ -263,6 +274,7 @@ public class Loader {
 	 * @param search 探したいディレクトリ
 	 */
 	public void load(File search) throws IOException {
+		this.completeLoad = false;
 		if (!search.exists() || !search.isDirectory()) throw new IllegalArgumentException("Only exists directory can be input."); // ないかディレクトリじゃない
 		GTS.GTSLog.log(Level.INFO, "Pack search started.");
 		File[] zips = search.listFiles((dir, name) -> (name.endsWith("zip"))); // Zipファイルだけを選別
@@ -277,5 +289,6 @@ public class Loader {
 			}
 		}
 		GTS.GTSLog.log(Level.INFO, "Pack search ended. Add " + packs.size() +  " packs.");
+		this.completeLoad = true;
 	}
 }

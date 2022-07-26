@@ -3,15 +3,11 @@ package jp.gingarenpo.gts.light;
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.core.ModelBase;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.util.ResourceLocation;
+import jp.gingarenpo.gts.pack.Pack;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * モデルセットの一覧。パックには複数あることがあるよ
@@ -20,9 +16,10 @@ public class ModelTrafficLight extends ModelBase<ConfigTrafficLight> implements 
 	
 	private static final long serialVersionUID = 1L;
 	
-	public ResourceLocation baseTex;
-	public ResourceLocation lightTex;
-	public ResourceLocation noLightTex; // それぞれテクスチャ
+	/**
+	 * テクスチャの変更を通知するフラグ
+	 */
+	private boolean needChangeTex = false;
 	
 	public ModelTrafficLight(ConfigTrafficLight config, MQO model, File file) {
 		this.config = config;
@@ -33,51 +30,59 @@ public class ModelTrafficLight extends ModelBase<ConfigTrafficLight> implements 
 		objects.addAll(config.getBody());
 		objects.addAll(config.getLight());
 		this.model = model.normalize(config.getSize(), objects);
+		//new Thread(() -> { this.model = model.normalize(config.getSize(), objects); this.isReady = true;}).start(); // 時間かかるのでスレッド処理
+		
+	}
+	
+	public boolean isNeedChangeTex() {
+		return needChangeTex;
 	}
 	
 	/**
-	 * 強制的にテクスチャを再読み込みする
-	 * Loaderにある必要があり
+	 * テクスチャの変更を伝えたときに実行する
 	 */
-	public void redrawTexture() {
-		if (config == null) {
-			GTS.GTSLog.warn("Warning. config is null. It may be broken packet.");
+	public void doneChangeTex() {
+		needChangeTex = false;
+	}
+	
+	/**
+	 * テクスチャの所在を再読み込みする。
+	 * あくまで保持するのはテクスチャ座標であり、実際のテクスチャのリソースロケーションはクライアント側で保持するべき。
+	 */
+	public void reloadTexture() {
+		if (GTS.loader == null) {
+			GTS.GTSLog.warn("Warning. loader is not ready.");
+			return;
+		}
+		if (file == null) {
+			GTS.GTSLog.warn("Warning. file is null. Is it a dummy model?");
+			return;
+		}
+		Pack p = GTS.loader.getPacks().get(file);
+		// System.out.println(file);
+		if (p == null) {
+			GTS.GTSLog.warn("Warning. pack not found. Are the pack in the mods directory?");
 			return;
 		}
 		
-		HashMap<String, BufferedImage> textures = GTS.loader.getTextures().get(file);
-		if (textures == null) {
-			GTS.GTSLog.warn("Warning. texture is null. It may be not exist pack.");
-			return;
+		for (ModelBase m: p.getModels()) {
+			if (!(m instanceof ModelTrafficLight)) continue;
+			if (m.equals(this)) {
+				System.out.println(((ModelTrafficLight) m).config.getTextures().getBase());
+				// mのテクスチャを読み込む
+				this.getConfig().getTextures().setBase(((ModelTrafficLight) m).config.getTextures().getBase());
+				this.getConfig().getTextures().setLight(((ModelTrafficLight) m).config.getTextures().getLight());
+				this.getConfig().getTextures().setNoLight(((ModelTrafficLight) m).config.getTextures().getNoLight());
+				this.getConfig().getTextures().setBaseTex(GTS.loader.getTexture(file, this.getConfig().getTextures().getBase()));
+				this.getConfig().getTextures().setLightTex(GTS.loader.getTexture(file, this.getConfig().getTextures().getLight()));
+				this.getConfig().getTextures().setNoLightTex(GTS.loader.getTexture(file, this.getConfig().getTextures().getNoLight()));
+				
+				this.needChangeTex = true;
+				return;
+			}
 		}
 		
-		// 全テクスチャを差し替える
-		BufferedImage base = textures.get(config.getTextures().getBase());
-		BufferedImage light = textures.get(config.getTextures().getLight());
-		BufferedImage nolight = textures.get(config.getTextures().getNoLight());
-		
-		if (base != null) {
-			config.getTextures().setBaseTex(base);
-			baseTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(config.getId() + "_base", new DynamicTexture(base));
-		}
-		else {
-			GTS.GTSLog.warn("Warning. base texture is null. It may be not exist pack.");
-		}
-		if (light != null) {
-			config.getTextures().setBaseTex(light);
-			lightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(config.getId() + "_light", new DynamicTexture(light));
-		}
-		else {
-			GTS.GTSLog.warn("Warning. light texture is null. It may be not exist pack.");
-		}
-		if (nolight != null) {
-			config.getTextures().setBaseTex(nolight);
-			noLightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(config.getId() + "_nolight", new DynamicTexture(nolight));
-		}
-		else {
-			GTS.GTSLog.warn("Warning. nolight texture is null. It may be not exist pack.");
-		}
-		
+		GTS.GTSLog.warn("Warning. model cannot found.");
 	}
 	
 	@Override
@@ -86,9 +91,43 @@ public class ModelTrafficLight extends ModelBase<ConfigTrafficLight> implements 
 					   "config=" + config +
 					   ", model=" + model +
 					   ", file=" + file +
-					   ", baseTex=" + baseTex +
-					   ", lightTex=" + lightTex +
-					   ", noLightTex=" + noLightTex +
 					   '}';
 	}
+	
+//	/**
+//	 * ResourceLocationをそのままでは読み込めないので、文字列に変換する形で送る。
+//	 * デフォルトのシリアライズに追記する形で読み出す。transientつけているので
+//	 * デフォルトでは書き込まれないはず。
+//	 * @param oos ストリーム
+//	 */
+//	private void writeObject(ObjectOutputStream oos) throws IOException {
+//		oos.defaultWriteObject(); // とりあえず書き込んでもらう
+//		// 3つのリソースを書き込むがない場合は「<null>」と書き込む
+//		System.out.println(baseTex);
+//		oos.writeUTF(baseTex == null ? "<null>" : baseTex.getPath());
+//		oos.writeUTF(lightTex == null ? "<null>" : lightTex.getPath());
+//		oos.writeUTF(noLightTex == null ? "<null>" : noLightTex.getPath());
+//		// 終わり
+//	}
+//
+//	/**
+//	 * 自前でwriteしたら自前でreadしてあげないと
+//	 * @param ois
+//	 * @throws IOException
+//	 */
+//	private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+//		ois.defaultReadObject(); // とりあえず読み込んでもらう
+//		// 3つのリソースを読み込むが、<null>だった場合はnullを入れる（入れなくてもいいだろうけど明示的に）
+//		String bp = ois.readUTF();
+//		String lp = ois.readUTF();
+//		String np = ois.readUTF();
+//
+//		System.out.println(bp);
+//
+//		baseTex = !bp.equals("<null>") ? new ResourceLocation(bp) : null;
+//		lightTex = !lp.equals("<null>") ? new ResourceLocation(lp) : null;
+//		noLightTex = !np.equals("<null>") ? new ResourceLocation(np) : null;
+//
+//		// 終わり
+//	}
 }

@@ -4,7 +4,6 @@ import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.core.GTSTileEntity;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
@@ -13,6 +12,7 @@ import net.minecraft.util.ResourceLocation;
 import org.apache.logging.log4j.Level;
 
 import javax.annotation.Nullable;
+import javax.imageio.ImageIO;
 import java.io.*;
 
 /**
@@ -26,8 +26,8 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 	private ModelTrafficLight addon = null; // この信号機が一体どの種類のモデルを使うのか。基本的に必ず何かしらが入るはず
 	private TrafficLight data = null; // この信号機のデータ
 	private double angle = 0.0f; // 設置された向き（角度）
-
 	
+
 	/**
 	 * true入れようがfalse入れようがダミーが入る
 	 *
@@ -46,23 +46,17 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 	 * 普通ありえないがファイルが見つからない場合は例外出しまくるので判断してください。
 	 */
 	public void setDummyModel() {
+		System.out.println("Dummy used");
 		try {
 			DummyConfigTrafficLight config = new DummyConfigTrafficLight();
 			addon = new ModelTrafficLight(config, new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/dummy/dummy_tl.mqo")).getInputStream()), null);
+			config.getTextures().setBaseTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
+			config.getTextures().setLightTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
+			config.getTextures().setNoLightTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-	
-	/**
-	 * ダミーのテクスチャを貼り付けるメソッド。
-	 * OpenGLのレンダー内で使用しないといけない。
-	 */
-	public void setDummyTexture() {
-		addon.baseTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("_base", new DynamicTexture(addon.getConfig().getTextures().getBaseTex()));
-		addon.lightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("_light", new DynamicTexture(addon.getConfig().getTextures().getBaseTex()));
-		addon.noLightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation( "_nolight", new DynamicTexture(addon.getConfig().getTextures().getBaseTex()));
 	}
 	
 	
@@ -73,6 +67,7 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 	
 	public void setAddon(ModelTrafficLight addon) {
 		this.addon = addon;
+		this.addon.getModel().normalize(this.addon.getConfig().getSize());
 	}
 	
 	public TrafficLight getData() {
@@ -82,8 +77,6 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 	public void setData(TrafficLight data) {
 		this.data = data;
 	}
-	
-	
 	
 	
 	/**
@@ -121,25 +114,18 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
 				this.addon.setFile((File) ois.readObject());
 				this.addon.reloadModel();
+				// this.addon.reloadTexture();
 			}
 		} catch (IOException | ClassNotFoundException e) {
 			// メモリ不足などでストリームを確保できなかった場合、あるいはオブジェクトが正しく読み込まれなかった時
 			GTS.GTSLog.log(Level.DEBUG, "Can't load data object Phase3[File](Maybe out of memory or data == null) -> " + e.getMessage());
 		}
 		
-		// リソースロケーションはこうしないとシリアライズできないらしいので
-		if (compound.hasKey("gts_tl_basetex_location")) {
-			this.addon.baseTex = new ResourceLocation(compound.getString("gtc_tl_basetex_location"));
-		}
-		else {
-			this.addon.baseTex = null;
-		}
-		
-		
-		
 		if (compound.hasKey("gts_tl_angle")) {
 			this.angle = compound.getDouble("gts_tl_angle");
 		}
+		
+		// GTS.GTSLog.log(Level.INFO, "Read NBT. " + this);
 	}
 	
 	@Override
@@ -176,16 +162,9 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 			GTS.GTSLog.log(Level.ERROR, "Can't write data object Phase2[File](Maybe out of memory) -> " + e.getMessage());
 		}
 		
-		// ロケーションを送る
-		if (this.getAddon().baseTex != null) {
-			compound.setString("gts_tl_basetex_location", this.addon.baseTex.getPath());
-		}
-		
-		
-		
 		compound.setDouble("gts_tl_angle", this.angle);
 		
-		
+		// GTS.GTSLog.log(Level.INFO, "Write NBT. " + this);
 		return c;
 		
 		
@@ -248,6 +227,10 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 		if (this.data.isUpdate()) {
 			world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
 			this.data.doneUpdate();
+		}
+		if (this.addon.isNeedChangeTex()) {
+			world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+			this.addon.doneChangeTex();
 		}
 	}
 	

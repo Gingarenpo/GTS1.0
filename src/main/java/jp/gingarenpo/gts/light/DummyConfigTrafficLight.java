@@ -1,11 +1,5 @@
 package jp.gingarenpo.gts.light;
 
-import jp.gingarenpo.gts.GTS;
-import net.minecraft.client.Minecraft;
-import net.minecraft.util.ResourceLocation;
-
-import javax.imageio.ImageIO;
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class DummyConfigTrafficLight extends ConfigTrafficLight {
@@ -16,13 +10,9 @@ public class DummyConfigTrafficLight extends ConfigTrafficLight {
 		this.setId("dummy"); // 名前はこれで固定
 		// テクスチャを無理やり指定
 		TexturePath t = new TexturePath();
-		try {
-			t.setBaseTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
-			t.setLightTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
-			t.setNoLightTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		t.setBase("textures/models/dummy_tl.png");
+		t.setLight("textures/models/dummy_tl.png");
+		t.setNoLight("textures/models/dummy_tl.png");
 		this.setTextures(t);
 		
 		this.setShowBoth(true);

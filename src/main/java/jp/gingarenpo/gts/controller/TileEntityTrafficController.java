@@ -100,7 +100,7 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 		this.markDirty();
 		if (!cycleChange) {
 			// world.notifyBlockUpdate(this.pos, world.getBlockState(pos), world.getBlockState(pos), 2); // なんかなくても動く
-			this.search(); // サイクル変わったら再読み込みする
+			// this.search(); // サイクル変わったら再読み込みするのは重いので止める
 		}
 	}
 	
@@ -194,7 +194,7 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 	public void readFromNBT(NBTTagCompound compound) {
 		super.readFromNBT(compound);
 		// 制御機の内容を読み込む
-		GTS.GTSLog.log(Level.INFO, "Read NBT. " + this);
+		// GTS.GTSLog.log(Level.INFO, "Read NBT. " + this);
 		byte[] nbtData = compound.getByteArray("gts_tc_data"); // 万が一存在しない場合サイズ0の配列が返ってくる
 		try (ByteArrayInputStream bais = new ByteArrayInputStream(nbtData)) {
 			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
@@ -204,7 +204,8 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 			}
 		} catch (IOException | ClassNotFoundException e) {
 			// ByteArrayInputStreamが何らかの影響で開けなかった場合、もしくは展開に失敗した場合
-			GTS.GTSLog.log(Level.ERROR, "Can't load data object(Maybe out of memory or data == null) -> " + e.getMessage());
+			e.printStackTrace();
+			GTS.GTSLog.log(Level.ERROR, "Can't load data object(Maybe out of memory or data == null) -> " + e.getClass().getName() + " - " + e.getMessage());
 		}
 	}
 	
@@ -218,6 +219,7 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 	@Override
 	public NBTTagCompound writeToNBT(NBTTagCompound compound) {
 		NBTTagCompound c = super.writeToNBT(compound); // まずはデフォルトに任せる
+		// GTS.GTSLog.log(Level.INFO, "Write NBT. " + this);
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
 				oos.writeObject(data); // 制御機のデータを書き込む

@@ -71,7 +71,7 @@ public abstract class ModelBase<T extends ConfigBase> implements Serializable {
 	 * @return
 	 */
 	public boolean equals(ModelBase o) {
-		System.out.printf("%s = %s%n", o.config.id, this.config.id);
+		// System.out.printf("%s = %s%n", o.config.id, this.config.id);
 		return (Objects.equals(o.config.id, this.config.id));
 	}
 	
@@ -80,7 +80,8 @@ public abstract class ModelBase<T extends ConfigBase> implements Serializable {
 	 */
 	public void reloadModel() {
 		// Loaderからモデル読み込み
-		if (GTS.loader == null || GTS.loader.getPacks() == null || file == null) {
+		if (GTS.loader == null || !GTS.loader.isCompleteLoad() || GTS.loader.getPacks() == null || file == null) {
+			GTS.GTSLog.warn("Warning. cannot load model because loader(not complete?) or pack or file is null");
 			return;
 		}
 		for (ModelBase m: GTS.loader.getPacks().get(file).getModels()) {

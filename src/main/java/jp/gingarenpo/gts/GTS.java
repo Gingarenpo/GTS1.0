@@ -42,7 +42,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 
@@ -69,11 +68,12 @@ public class GTS {
 	public static Logger GTSLog; // GTSのログを表示するためのもの
 	public static Loader loader; // GTS用のアドオンパックロード
 	
-	public static JFrame window = new JFrame("GTS"); // GTS用のウィンドウ。GUIをMinecraftで表現するのがめんどくさいので…
+	public static JFrame window; // GTS用のウィンドウ。GUIをMinecraftで表現するのがめんどくさいので…
 	public static int windowWidth; // GTS用のウィンドウの大きさ。画面解像度を基準として決定する
 	public static int windowHeight; // こちらも同じく
 	
 	public static CreativeTabs gtsTab; // GTCのタブ
+
 	
 	@SidedProxy(clientSide = "jp.gingarenpo.gts.proxy.GTSProxy", serverSide = "jp.gingarenpo.gts.proxy.GTSServerProxy")
 	public static GTSProxy proxy; // クライアントとサーバーで処理を別にしなくてはならない内容などをここに記載
@@ -100,20 +100,10 @@ public class GTS {
 			}
 		};
 		
-		// AWTによりGUIウィンドウの大きさを決定する
-		Dimension d = Toolkit.getDefaultToolkit().getScreenSize(); // 大きさを決めて
-		float b = 0.5f; // 画面解像度に対してどれくらいの大きさにするか
-		windowWidth = (int) (d.width * b);
-		windowHeight = (int) (d.height * b);
 		
 		// ウィンドウの準備だけする（表示はしない）
 		System.setProperty("awt.useSystemAAFontSettings","on");
 		System.setProperty("swing.aatext", "true");
-		window.setTitle("GTS");
-		window.getContentPane().setPreferredSize(new Dimension(windowWidth, windowHeight));
-		window.setResizable(false);
-		window.pack();
-		window.setLocationRelativeTo(null); // 画面中央
 	}
 	
 	/**
@@ -125,6 +115,7 @@ public class GTS {
 	public void preInit(FMLPreInitializationEvent event) throws IOException {
 		// イベントを登録する
 		MinecraftForge.EVENT_BUS.register(new GTSWorldEvent()); // ワールドイベント
+	
 		
 		// ログを登録する
 		GTSLog = LogManager.getLogger("GTS");
@@ -141,6 +132,7 @@ public class GTS {
 		// パックを登録する
 		loader = new Loader();
 		loader.load(GTSModDir); // 検索をかける
+		
 		
 		// プロキシ処理
 		proxy.registerTESRs();

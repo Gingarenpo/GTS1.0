@@ -29,6 +29,13 @@ public class MQO implements Serializable, Cloneable {
 	private HashMap<String, MQOObject> object = new HashMap<>();
 	
 	private static final long serialVersionUID = 1L;
+	
+	/**
+	 * クローン用に用意しているだけであり意味がありません
+	 */
+	private MQO() {
+	
+	}
 
 
 	/**
@@ -263,9 +270,11 @@ public class MQO implements Serializable, Cloneable {
 	 */
 	public MQO normalize(double size, ArrayList<String> object) {
 		// まずロールバックできるように自分自身を代入
+		
 		MQO original = this.clone();
 		// 効率悪いけど全部のオブジェクトに対して作業を繰り返す
 		double[][] minmax = original.getMinMaxPosition(object);
+		
 		
 		// ここで、正規化する前の最大・最小座標が入る
 		//System.out.println("正規化前座標最小XYZ: " + minmax[0][0] + ", " + minmax[0][1] + ", " + minmax[0][2] + ", 最大XYZ: " + minmax[1][0] + ", " + minmax[1][1] + ", " + minmax[1][2]);
@@ -277,6 +286,7 @@ public class MQO implements Serializable, Cloneable {
 		double sizeZ = GMathHelper.distance(minmax[0][2], minmax[1][2]); // 以上、3つとも距離を算出する
 		// 大きい数を割る
 		double per = size / Math.max(Math.max(sizeX, sizeY), sizeZ); // この係数を頂点にかけることで正規化が可能
+		
 		
 		// もう一度ループ回します
 		for (MQOObject obj : original.getObjects4Loop()) {
@@ -290,6 +300,7 @@ public class MQO implements Serializable, Cloneable {
 		}
 		
 		minmax = original.getMinMaxPosition(object);
+		
 		
 		// 処理終了（faceの方には頂点番号しか格納していないので弄る必要がない）
 		//System.out.println("正規化後座標最小XYZ: " + minmax[0][0] + ", " + minmax[0][1] + ", " + minmax[0][2] + ", 最大XYZ: " + minmax[1][0] + ", " + minmax[1][1] + ", " + minmax[1][2]);
@@ -386,26 +397,9 @@ public class MQO implements Serializable, Cloneable {
 	 */
 
 	public MQO clone() {
-		// このクラスをシリアライズ
-		byte[] copy;
-		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-			try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-				oos.writeObject(this);
-			} // 書き込んでおく
-			copy = baos.toByteArray();
-		} catch (IOException e) {
-			throw new MQOException("Cannot clone because this object is not serializable");
-		}
-		
-		MQO copyObject = null;
-		try (ByteArrayInputStream bais = new ByteArrayInputStream(copy)) {
-			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
-				copyObject = (MQO) ois.readObject();
-			}
-		} catch (ClassNotFoundException | IOException e) {
-			throw new MQOException("Cannot clone because this object is not serializable");
-		}
-		return copyObject;
+		MQO clone = new MQO();
+		clone.object = new HashMap<>(this.object); // このオブジェクトと全く同じだけど参照が異なるコピーを作る
+		return clone;
 	}
 
 	public static class MQOException extends RuntimeException {
