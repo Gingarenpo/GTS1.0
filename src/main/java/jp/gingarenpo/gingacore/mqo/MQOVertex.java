@@ -14,14 +14,12 @@ public class MQOVertex implements Serializable, Cloneable {
 	private double x;
 	private double y;
 	private double z; // 以上、座標数値
+	
 
-	private MQOObject mqo; // 親オブジェクト
-
-	public MQOVertex(MQOObject mqo, String vnum) {
+	public MQOVertex(String vnum) {
 		// MQOの頂点記述方式に従って格納
 		// 0.12345 0.23456 0.34567と3つの数値がスペースで区切られている
 		// 正規化してあること前提での処理
-		this.mqo = mqo; // 代入
 
 		final String[] v = vnum.split(" "); // 分割して…
 		//System.out.println("Vertex["+v.length+"]");
@@ -36,9 +34,14 @@ public class MQOVertex implements Serializable, Cloneable {
 		// 終わり
 	}
 	
-	private MQOVertex(MQOObject mqo) {
-		this.mqo = mqo;
+	public MQOVertex clone() {
+		try {
+			return (MQOVertex) super.clone();
+		} catch (CloneNotSupportedException e) {
+			return null;
+		}
 	}
+
 
 	// 正規化に必要なためsetも入れているが外部からの呼び出しは不可能（同一パッケージ内のみ）
 
@@ -67,12 +70,4 @@ public class MQOVertex implements Serializable, Cloneable {
 	}
 	
 	
-	/**
-	 * この頂点の属するMQOオブジェクトを返します。
-	 *
-	 * @return MQOオブジェクト
-	 */
-	public MQOObject getObject() {
-		return mqo;
-	}
 }

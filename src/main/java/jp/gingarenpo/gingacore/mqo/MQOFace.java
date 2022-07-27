@@ -13,8 +13,7 @@ import java.util.ArrayList;
  */
 public class MQOFace implements Serializable, Cloneable {
 	
-	private MQOObject mqo; // 親オブジェクト
-	private int[] v; // 頂点番号を格納（固定なのでプリミティブ配列で）
+	private MQOVertex[] v; // 頂点番号を格納（固定なのでプリミティブ配列で）
 	private ArrayList<double[]> uv = new ArrayList<double[]>(); // 頂点対応のUV座標を格納
 	
 	private static final long serialVersionUID = 1L;
@@ -28,7 +27,6 @@ public class MQOFace implements Serializable, Cloneable {
 	 * @param uvnum それぞれの頂点に対応したUVを記録する。必ずvnumの倍の引数を持つ
 	 */
 	public MQOFace(MQOObject mqo, String vnum, String uvnum) {
-		this.mqo = mqo; // 親オブジェクトを代入
 		final String[] vs = vnum.split(" "); // 空白で
 		final String[] uvs = uvnum.split(" "); // これも
 		String vv = null;
@@ -39,24 +37,19 @@ public class MQOFace implements Serializable, Cloneable {
 
 		if (vs.length * 2 != uvs.length) // 座標数が一致しない
 			throw new MQO.MQOException("Illegal UV or Vertex parameter!!");
-
-		// X,Y,Zそれぞれを代入する
-		final double[] vX = new double[vs.length];
-		final double[] vY = new double[vs.length];
-		final double[] vZ = new double[vs.length]; // それぞれ座標を格納するもの
-		v = new int[vs.length]; // 指定した数で初期化
+		
+		v = new MQOVertex[vs.length]; // 指定した数で初期化
 		for (int i = 0; i < vs.length; i++) {
-			v[i] = Integer.parseInt(vs[i]); // 頂点番号を代入
+			v[i] = mqo.getVertexs().get(Integer.parseInt(vs[i])); // 頂点番号を代入
 			uv.add(i, new double[] {Double.parseDouble(uvs[i*2]), Double.parseDouble(uvs[i*2+1])}); // UVをね
-			vX[i] = mqo.getVertexs().get(v[i]).getX();
-			vY[i] = mqo.getVertexs().get(v[i]).getY();
-			vZ[i] = mqo.getVertexs().get(v[i]).getZ();
+			
 		}
 	}
 	
-	private MQOFace(MQOObject mqo) {
-		this.mqo = mqo;
-	}
+	/**
+	 * Clone用に予約してくるヤツ
+	 */
+	private MQOFace() {}
 
 
 	/**
@@ -68,12 +61,12 @@ public class MQOFace implements Serializable, Cloneable {
 	public void drawFace(BufferBuilder b, float color) {
 		if (v.length == 4) {
 			// 四角形の場合は二回呼び出す（1,2,3 - 3,4,1）
-			set3Vertex(b, color, new MQOVertex[] {mqo.getVertexs().get(v[0]), mqo.getVertexs().get(v[1]), mqo.getVertexs().get(v[2])}, new double[][] {uv.get(0), uv.get(1), uv.get(2)});
-			set3Vertex(b, color, new MQOVertex[] {mqo.getVertexs().get(v[0]), mqo.getVertexs().get(v[2]), mqo.getVertexs().get(v[3])}, new double[][] {uv.get(0), uv.get(2), uv.get(3)});
+			set3Vertex(b, color, new MQOVertex[] {v[0], v[1], v[2]}, new double[][] {uv.get(0), uv.get(1), uv.get(2)});
+			set3Vertex(b, color, new MQOVertex[] {v[0], v[2], v[3]}, new double[][] {uv.get(0), uv.get(2), uv.get(3)});
 		}
 		else {
 			// 三角形の場合はそのまま呼び出す
-			set3Vertex(b, color, new MQOVertex[] {mqo.getVertexs().get(v[0]), mqo.getVertexs().get(v[1]), mqo.getVertexs().get(v[2])}, new double[][] {uv.get(0), uv.get(1), uv.get(2)});
+			set3Vertex(b, color, new MQOVertex[] {v[0], v[1], v[2]}, new double[][] {uv.get(0), uv.get(1), uv.get(2)});
 		}
 	}
 	
@@ -104,7 +97,7 @@ public class MQOFace implements Serializable, Cloneable {
 		// 4つ以上頂点がある場合はその中から3つ選ぶ。どれ選んでも同じなので前から3つ
 		MQOVertex[] vs = new MQOVertex[3];
 		for (int i = 0; i < 3; i++) {
-			vs[i] = mqo.getVertexs().get(v[i]);
+			vs[i] = v[i];
 		}
 		
 		// 単位ベクトルの大きさを返しそのy座標を取得する
@@ -128,11 +121,20 @@ public class MQOFace implements Serializable, Cloneable {
 	}
 
 	public MQOFace clone() {
-		MQOFace clone = new MQOFace(this.mqo);
+		MQOFace clone = new MQOFace();
 		clone.uv = new ArrayList<>(uv);
-		clone.v = v;
+		clone.v = new MQOVertex[v.length];
+		for (int i = 0; i < v.length; i++) {
+			clone.v[i] = v[i].clone();
+		}
 		return clone;
 	}
-
 	
+	public void setV(MQOVertex[] v) {
+		this.v = v;
+	}
+	
+	public MQOVertex[] getV() {
+		return v;
+	}
 }

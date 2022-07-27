@@ -23,11 +23,7 @@ public class MQOObject implements Serializable, Cloneable {
 	// モデルオブジェクトの名前
 	String name; // 必ずあるはずよ
 	
-	// 元親の名前
-	MQO mqo;
-	
-	public MQOObject(MQO mqo, String name) {
-		this.mqo = mqo;
+	public MQOObject(String name) {
 		this.name = name; // 名前
 	}
 	
@@ -51,9 +47,6 @@ public class MQOObject implements Serializable, Cloneable {
 		return name;
 	}
 	
-	public MQO getParent() {
-		return mqo;
-	}
 	
 	/**
 	 * 指定した色を使用してこのオブジェクトを描画するバッファを返します。
@@ -66,10 +59,18 @@ public class MQOObject implements Serializable, Cloneable {
 		}
 	}
 	
+	/**
+	 * 全部クローンする
+	 * @return
+	 */
 	public MQOObject clone() {
-		MQOObject clone = new MQOObject(this.mqo, this.name);
-		clone.vertex = new ArrayList<>(this.vertex);
-		clone.face = new ArrayList<>(this.face);
+		MQOObject clone = new MQOObject(this.name);
+		for (MQOFace f : this.face) {
+			clone.face.add(f.clone());
+		}
+		for (MQOVertex v : this.vertex) {
+			clone.vertex.add(v.clone());
+		}
 		return clone;
 	}
 

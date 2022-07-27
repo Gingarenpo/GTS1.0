@@ -7,10 +7,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Scanner;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -190,12 +187,12 @@ public class MQO implements Serializable, Cloneable {
 					final Matcher m = Pattern.compile(regexV).matcher(line); // 作成して…
 					m.find(); // 絶対にあるはず
 					final String vnum = m.group(); // 頂点座標の格納
-					obj.getVertexs().add(new MQOVertex(obj, vnum));
+					obj.getVertexs().add(new MQOVertex(vnum));
 				} else if (Pattern.matches(regexO, line)) {
 					// Objectの始まりだった場合
 					final Matcher m = Pattern.compile(regexO).matcher(line);
 					m.find();
-					obj = new MQOObject(this, m.group(1)); // 名前で作成
+					obj = new MQOObject(m.group(1)); // 名前で作成
 					fo = true;
 
 				} else if (Pattern.matches(regexVN, line)) {
@@ -297,13 +294,26 @@ public class MQO implements Serializable, Cloneable {
 				vertex.setY(vertex.getY() * per);
 				vertex.setZ(vertex.getZ() * per);
 			}
+			
+			for (MQOFace face: obj.getFaces()) {
+				// こっちにも頂点を格納しているのでこっちも変更しないといけない
+				// というか上記保持しておく意味あるのかしら
+				MQOVertex[] tmp = face.getV();
+				for (MQOVertex mqoVertex : tmp) {
+					mqoVertex.setX(mqoVertex.getX() * per);
+					mqoVertex.setY(mqoVertex.getY() * per);
+					mqoVertex.setZ(mqoVertex.getZ() * per);
+				}
+				face.setV(tmp);
+			}
+			
 		}
 		
 		minmax = original.getMinMaxPosition(object);
 		
 		
 		// 処理終了（faceの方には頂点番号しか格納していないので弄る必要がない）
-		//System.out.println("正規化後座標最小XYZ: " + minmax[0][0] + ", " + minmax[0][1] + ", " + minmax[0][2] + ", 最大XYZ: " + minmax[1][0] + ", " + minmax[1][1] + ", " + minmax[1][2]);
+		System.out.println("正規化後座標最小XYZ: " + minmax[0][0] + ", " + minmax[0][1] + ", " + minmax[0][2] + ", 最大XYZ: " + minmax[1][0] + ", " + minmax[1][1] + ", " + minmax[1][2]);
 		return original;
 	}
 	
@@ -329,6 +339,13 @@ public class MQO implements Serializable, Cloneable {
 				v.setX((v.getX() - ox) * xper + ox);
 				v.setY((v.getY() - oy) * yper + oy);
 				v.setZ((v.getZ() - oz) * zper + oz);
+			}
+			for (MQOFace f: o.getFaces()) {
+				for (MQOVertex v: f.getV()) {
+					v.setX((v.getX() - ox) * xper + ox);
+					v.setY((v.getY() - oy) * yper + oy);
+					v.setZ((v.getZ() - oz) * zper + oz);
+				}
 			}
 		}
 		
@@ -397,7 +414,11 @@ public class MQO implements Serializable, Cloneable {
 	 */
 
 	public MQO clone() {
-		return this;
+		MQO clone = new MQO();
+		for (Map.Entry<String, MQOObject> o: this.object.entrySet()) {
+			clone.object.put(o.getKey(), o.getValue().clone());
+		}
+		return clone;
 	}
 
 	public static class MQOException extends RuntimeException {
