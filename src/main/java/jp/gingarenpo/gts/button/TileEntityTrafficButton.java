@@ -34,6 +34,7 @@ public class TileEntityTrafficButton extends GTSTileEntity implements Serializab
 	public TileEntityTrafficButton() {
 		this.button = new TrafficButton();
 		this.setDummyModel();
+		this.markDirty();
 	}
 	
 	/**
