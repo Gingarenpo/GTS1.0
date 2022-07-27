@@ -1,7 +1,7 @@
 {
 	"variants": {
 		"normal": {
-			"model": "gts:arm"
+			"model": "gts:button"
 		}
 	}
 }

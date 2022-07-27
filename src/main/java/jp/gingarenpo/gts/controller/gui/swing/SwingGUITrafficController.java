@@ -5,6 +5,7 @@ import jp.gingarenpo.gts.controller.cycle.Cycle;
 import jp.gingarenpo.gts.controller.cycle.TimeCycle;
 import jp.gingarenpo.gts.controller.phase.Phase;
 import jp.gingarenpo.gts.controller.phase.PhaseBase;
+import jp.gingarenpo.gts.controller.phase.UntilDetectPhase;
 import jp.gingarenpo.gts.exception.DataExistException;
 import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
@@ -475,17 +476,20 @@ public class SwingGUITrafficController extends JFrame {
 			add(t1);
 			
 			// フェーズ秒数
-			JLabel l2 = new JLabel("フェーズ表示Tick数");
-			l2.setBounds(5, 50, (SwingGUITrafficController.this.width / 4 * 3 - 70) / 4, 20);
-			l2.setPreferredSize(new Dimension((SwingGUITrafficController.this.width / 4 * 3 - 70) / 4, 20));
+			JLabel l2 = new JLabel("表示Tick");
+			l2.setBounds(5, 50, (SwingGUITrafficController.this.width / 4 * 3 - 70) / 8, 20);
+			l2.setPreferredSize(new Dimension((SwingGUITrafficController.this.width / 4 * 3 - 70) / 8, 20));
 			add(l2);
 			
 			// フェーズ名称フィールド
 			JTextField t2 = new JTextField();
 			t2.setPreferredSize(new Dimension((SwingGUITrafficController.this.width / 4 * 3 - 70) / 4, 20));
-			t2.setBounds((SwingGUITrafficController.this.width / 4 * 3 - 70) / 4 + 5, 50, (SwingGUITrafficController.this.width / 4 * 3 - 70) / 4, 20);
+			t2.setBounds((SwingGUITrafficController.this.width / 4 * 3 - 70) / 8 + 5, 50, (SwingGUITrafficController.this.width / 4 * 3 - 70) / 8, 20);
 			if (phase instanceof PhaseBase) {
 				t2.setText(String.valueOf(((PhaseBase) phase).getContinueTick()));
+			}
+			else if (phase instanceof  UntilDetectPhase) {
+				t2.setText(String.valueOf(((UntilDetectPhase) phase).getWaitTick()));
 			}
 			t2.addKeyListener(new KeyAdapter() {
 				@Override
@@ -508,6 +512,63 @@ public class SwingGUITrafficController extends JFrame {
 				}
 			});
 			add(t2);
+			
+			// フェーズの種類
+			JComboBox<String> c1 = new JComboBox<>(new String[] {"固定間隔（Tickに現示時間を入力）", "検知信号を受信するまで（Tickに最低待ち時間を入力）"});
+			c1.setSelectedIndex((phase instanceof PhaseBase) ? 0 : (phase instanceof UntilDetectPhase) ? 1 : 0);
+			c1.setPreferredSize(new Dimension((SwingGUITrafficController.this.width / 4 * 3 - 70) / 4, 20));
+			c1.setBounds((SwingGUITrafficController.this.width / 4 * 3 - 70) / 4 + 5, 50, (SwingGUITrafficController.this.width / 4 * 3 - 70) / 8 * 5, 20);
+			c1.addActionListener((event) -> {
+				int tick;
+				try {
+					tick = Integer.parseInt(t2.getText());
+					if (tick <= 0) {
+						throw new NumberFormatException();
+					}
+				} catch (NumberFormatException e2) {
+					JOptionPane.showMessageDialog(SwingGUITrafficController.this, "正の整数を入力してください！", "入力値が不正です", JOptionPane.ERROR_MESSAGE);
+					c1.setSelectedIndex((phase instanceof PhaseBase) ? 0 : (phase instanceof UntilDetectPhase) ? 1 : 0);
+					return;
+				}
+				// チャンネルをコピーしてPhaseのインスタンスを切り替える
+				if (c1.getSelectedIndex() == 0 && !(phase instanceof PhaseBase)) {
+					// 固定間隔でかつ現在のものが固定間隔以外だった場合
+					PhaseBase p = new PhaseBase(tick);
+					p.setChannels(phase.getChannels()); // チャンネルを代入（どうせ前のフェーズ消えるからシャローコピーでも問題ない）
+					p.setTicks(phase.getTick()); // Tickを代入
+					p.setName(phase.getName()); // んでフェーズ名称も代入
+					
+					for (int i = 0; i < cycle.getPhases().size(); i++) {
+						if (cycle.getPhases().get(i).getName().equals(p.getName())) {
+							cycle.getPhases().remove(i);
+							cycle.getPhases().add(i, p); // こうしないと入れ替えられない
+							break;
+						}
+					}
+					
+					this.phase = p; // 入れ替え
+					
+				}
+				else if (c1.getSelectedIndex() == 1 && !(phase instanceof UntilDetectPhase)) {
+					// 固定間隔でかつ現在のものが固定間隔以外だった場合
+					UntilDetectPhase p = new UntilDetectPhase(tick);
+					p.setChannels(phase.getChannels()); // チャンネルを代入（どうせ前のフェーズ消えるからシャローコピーでも問題ない）
+					p.setTicks(phase.getTick()); // Tickを代入
+					p.setName(phase.getName()); // んでフェーズ名称も代入
+					
+					for (int i = 0; i < cycle.getPhases().size(); i++) {
+						if (cycle.getPhases().get(i).getName().equals(p.getName())) {
+							cycle.getPhases().remove(i);
+							cycle.getPhases().add(i, p); // こうしないと入れ替えられない
+							break;
+						}
+					}
+					
+					this.phase = p; // 入れ替え
+					
+				}
+			});
+			add(c1);
 			
 			// チャンネル追加ボタン
 			JButton addChannelButton = new JButton("チャンネル追加");

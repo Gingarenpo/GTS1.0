@@ -29,9 +29,7 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 	
 	private double[] centerPosition = new double[3]; // モデルの中心ずらし位置。初期値0。XYZで指定、ブロックの1辺＝1とする
 	
-	public ConfigTrafficLight() {
-		// JSONデシリアライズの為に必要
-	}
+	
 	
 	@Override
 	public String toString() {

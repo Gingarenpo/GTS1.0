@@ -49,7 +49,7 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 		System.out.println("Dummy used");
 		try {
 			DummyConfigTrafficLight config = new DummyConfigTrafficLight();
-			addon = new ModelTrafficLight(config, new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/dummy/dummy_tl.mqo")).getInputStream()), null);
+			addon = new ModelTrafficLight(config, new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/dummy/dummy_tl.mqo")).getInputStream()), null, true);
 			config.getTextures().setBaseTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
 			config.getTextures().setLightTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
 			config.getTextures().setNoLightTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));

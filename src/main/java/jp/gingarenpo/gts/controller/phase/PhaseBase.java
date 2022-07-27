@@ -44,4 +44,5 @@ public class PhaseBase extends Phase {
 	public void setContinueTick(int continueTick) {
 		this.continueTick = continueTick;
 	}
+	
 }

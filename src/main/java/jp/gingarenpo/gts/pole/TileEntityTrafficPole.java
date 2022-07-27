@@ -9,6 +9,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.AxisAlignedBB;
 import org.apache.logging.log4j.Level;
 
 import javax.annotation.Nullable;
@@ -56,6 +57,8 @@ public class TileEntityTrafficPole extends GTSTileEntity {
 	 * アームの接続が行われている最中かどうか。
 	 */
 	private boolean preConnect = false;
+	
+	private AxisAlignedBB renderBoundingBox = null;
 	
 	
 	
@@ -107,6 +110,50 @@ public class TileEntityTrafficPole extends GTSTileEntity {
 	
 	public void setArm(TrafficArm arm) {
 		this.arm = arm;
+	}
+	
+	/**
+	 * おそらく、レンダー範囲を返すものだと思われる。通常このブロック（デフォルト1x1）から視点が外れると
+	 * レンダリングされなくなるためアームがちぎれるといった現象が発生するが、
+	 * それを回避できるメソッドと思われる。毎回呼び出されるのか最初に呼び出されるのかは謎。
+	 * @return レンダリングすべき範囲
+	 */
+	@Override
+	public AxisAlignedBB getRenderBoundingBox() {
+		// アタッチしている交通信号機の最小座標と最大座標を取得してその範囲とする
+		if (renderBoundingBox == null) return super.getRenderBoundingBox();
+		return renderBoundingBox;
+		
+	}
+	
+	/**
+	 * レンダーボックスの再計算を行う。毎フレームやるには重いので必要に応じて呼び出す。
+	 */
+	public void calcRenderBoundingBox() {
+		if (arm == null) {
+			return;
+		}
+		
+		double minX = getPos().getX();
+		double minY = getPos().getY();
+		double minZ = getPos().getZ();
+		double maxX = getPos().getX() + 1;
+		double maxY = getPos().getY() + 1;
+		double maxZ = getPos().getZ() + 1;
+		
+		for (double[] to: arm.getTo()) {
+			minX = Math.min(to[0], minX);
+			minY = Math.min(to[1], minY);
+			minZ = Math.min(to[2], minZ);
+			
+			maxX = Math.max(to[0], maxX);
+			maxY = Math.max(to[1], maxY);
+			maxZ = Math.max(to[2], maxZ);
+		}
+		
+		this.renderBoundingBox = new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ);
+		
+		
 	}
 	
 	/**
@@ -167,6 +214,7 @@ public class TileEntityTrafficPole extends GTSTileEntity {
 		bottom = compound.getBoolean("gts_tp_bottom");
 		packLocation = compound.getString("gts_tp_pl").isEmpty() ? null : new File(compound.getString("gts_tp_pl"));
 		
+		this.calcRenderBoundingBox();
 		
 	}
 	

@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
+import jp.gingarenpo.gts.button.ConfigTrafficButton;
+import jp.gingarenpo.gts.button.ModelTrafficButton;
 import jp.gingarenpo.gts.core.ConfigBase;
 import jp.gingarenpo.gts.core.ModelBase;
 import jp.gingarenpo.gts.light.ConfigTrafficLight;
@@ -230,7 +232,7 @@ public class Loader {
 						t.setLightTex(textures.get(t.getLight()));
 						t.setNoLightTex(textures.get(t.getNoLight())); // 以上、テクスチャのセット
 						
-						m.add(new ModelTrafficLight(config, models.get(config.getModel()), pack)); // モデルは絶対にあるはずなので
+						m.add(new ModelTrafficLight(config, models.get(config.getModel()), pack, true)); // モデルは絶対にあるはずなので
 					}
 					else if (configBase instanceof ConfigTrafficPole) {
 						ConfigTrafficPole config = (ConfigTrafficPole) configBase;
@@ -241,11 +243,34 @@ public class Loader {
 						
 						if (!textures.containsKey(config.getTexture())) {
 							// テクスチャが存在しない
-							GTS.GTSLog.warn(config.getId() + " is not found in this pack. This model was skipped.");
+							GTS.GTSLog.warn(config.getTexture() + " is not found in this pack. This model was skipped.");
 						}
 						
 						config.setTexImage(textures.get(config.getTexture()));
 						m.add(new ModelTrafficPole(config, models.get(config.getModel()), pack));
+						
+					}
+					else if (configBase instanceof ConfigTrafficButton) {
+						ConfigTrafficButton config = (ConfigTrafficButton) configBase;
+						if (config.getTextures() == null || config.getTextures().size() == 0) {
+							GTS.GTSLog.log(Level.WARN, config.getId() + " didn't declare Texture. This model was skipped.");
+							continue;
+						}
+						
+						if (!textures.containsKey(config.getBaseTexture())) {
+							GTS.GTSLog.warn(config.getBaseTexture() + " is not found in this pack. This model was skipped.");
+						}
+						
+						config.setBaseTex(textures.get(config.getBaseTexture()));
+						
+						if (!textures.containsKey(config.getBaseTexture())) {
+							GTS.GTSLog.warn("Push Texture " + config.getBaseTexture() + " is not found in this pack. Base texture use.");
+							config.setPushTex(textures.get(config.getBaseTexture()));
+						}
+						else {
+							config.setPushTex(textures.get(config.getPushTexture()));
+						}
+						m.add(new ModelTrafficButton(config, models.get(config.getModel()), pack));
 						
 					}
 					bar.step(configBase.getId());

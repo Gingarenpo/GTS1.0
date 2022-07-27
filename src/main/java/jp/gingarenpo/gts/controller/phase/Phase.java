@@ -9,7 +9,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 /**
@@ -122,6 +121,15 @@ public abstract class Phase implements Serializable {
 	}
 	
 	/**
+	 * 指定したチャンネルをセットする。こちらはSwingからのみ使用されることを想定しているので
+	 * 他のところでは使ってほしくない。
+	 * @param channels
+	 */
+	public void setChannels(LinkedHashMap<Long, ConfigTrafficLight.LightObject> channels) {
+		this.channels = channels;
+	}
+	
+	/**
 	 * Tickを1個進める。
 	 * @return
 	 */
@@ -144,6 +152,14 @@ public abstract class Phase implements Serializable {
 	}
 	
 	/**
+	 * 通常使用しない。指定したTickに強制的に変更する。
+	 * @param ticks
+	 */
+	public void setTicks(long ticks) {
+		this.ticks = ticks;
+	}
+	
+	/**
 	 * このフェーズの状態を維持するかどうかを返すメソッド。必ず実装する必要がある。
 	 * このメソッドは制御機にサイクルが登録されていて、そのサイクルが起動している場合に1Tick毎に呼び出されるため、
 	 * できる限り重たい処理は入れずに返すべきである。（I/O処理とか入れるとレスポンスが悪くなる）
@@ -160,7 +176,8 @@ public abstract class Phase implements Serializable {
 	 */
 	public abstract boolean shouldContinue(TrafficController controller, long totalTicks, boolean detected, World world);
 	
-	public HashMap<Long, ConfigTrafficLight.LightObject> getChannels() {
+	public LinkedHashMap<Long, ConfigTrafficLight.LightObject> getChannels() {
 		return channels;
 	}
+	
 }

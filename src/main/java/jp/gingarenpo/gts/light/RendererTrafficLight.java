@@ -67,6 +67,7 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		
 		GlStateManager.shadeModel(GL11.GL_SMOOTH);
 		GlStateManager.disableLighting();
+		RenderHelper.disableStandardItemLighting();
 		
 		// Tessellator 用意
 		Tessellator t = Tessellator.getInstance();

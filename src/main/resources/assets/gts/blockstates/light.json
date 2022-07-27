@@ -2,18 +2,6 @@
 	"variants": {
 		"normal": {
 			"model": "gts:light"
-		},
-		"facing=west": {
-			"model": "gts:light"
-		},
-		"facing=east": {
-			"model": "gts:light"
-		},
-		"facing=north": {
-			"model": "gts:light"
-		},
-		"facing=south": {
-			"model": "gts:light"
 		}
 	}
 }

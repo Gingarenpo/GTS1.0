@@ -207,6 +207,7 @@ public class BlockTrafficLight extends BlockContainer {
 		((TileEntityTrafficPole) from).setArm(a); // アームを追加
 		ist.setIntArray("gts_pre_connect_xyz", new int[1]); // 1個しか要素がない状態は無接続とする
 		ist.setBoolean("gts_pre_connect", false);
+		((TileEntityTrafficPole) from).calcRenderBoundingBox(); // レンダリングボックスの再計算を要求する
 		return true;
 	}
 }

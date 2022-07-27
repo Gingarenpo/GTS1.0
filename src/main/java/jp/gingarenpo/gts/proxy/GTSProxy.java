@@ -1,6 +1,8 @@
 package jp.gingarenpo.gts.proxy;
 
 import jp.gingarenpo.gts.GTS;
+import jp.gingarenpo.gts.button.RendererTrafficButton;
+import jp.gingarenpo.gts.button.TileEntityTrafficButton;
 import jp.gingarenpo.gts.controller.RendererTrafficController;
 import jp.gingarenpo.gts.controller.TileEntityTrafficController;
 import jp.gingarenpo.gts.light.RendererTrafficLight;
@@ -25,6 +27,7 @@ public class GTSProxy {
 		setCustomModelResourceLocation(GTS.Items.light, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "light"), "inventory"));
 		setCustomModelResourceLocation(GTS.Items.pole, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "pole"), "inventory"));
 		setCustomModelResourceLocation(GTS.Items.arm, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "arm"), "inventory"));
+		setCustomModelResourceLocation(GTS.Items.button, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "button"), "inventory"));
 		
 	}
 	
@@ -35,5 +38,6 @@ public class GTSProxy {
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityTrafficController.class, new RendererTrafficController());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityTrafficLight.class, new RendererTrafficLight());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityTrafficPole.class, new RendererTrafficPole());
+		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityTrafficButton.class, new RendererTrafficButton());
 	}
 }

@@ -21,7 +21,32 @@ public class ModelTrafficLight extends ModelBase<ConfigTrafficLight> implements 
 	 */
 	private boolean needChangeTex = false;
 	
+	/**
+	 * 指定したコンフィグ、指定したモデル、指定したファイルを用いてこのモデルを初期化する。
+	 * 正規化処理は行わないが、代わりにモデルをリロードしようと試みる。
+	 *
+	 * @param config コンフィグ
+	 * @param model モデル
+	 * @param file パック
+	 */
 	public ModelTrafficLight(ConfigTrafficLight config, MQO model, File file) {
+		this(config, model, file, false);
+		this.reloadModel();
+	}
+	
+	/**
+	 * 指定したコンフィグ、指定したモデル、指定したファイルを用いてこのモデルを初期化する。
+	 * normalize処理が割と重く、forで総当たりパック検索したほうが早かったりするので
+	 * Loaderから初回読み込み時にはモデルをnormalizeするためにtrueとする。その他の場合はfalseとして
+	 * normalizeをおこなわないようにすることで高速化を図る。
+	 *
+	 * 何も指定しないとfalseを指定したものとして扱う（オーバーロードしてある）
+	 * @param config モデルのコンフィグ
+	 * @param model モデルの実体
+	 * @param file パックファイル
+	 * @param normalize 正規化する場合はtrue
+	 */
+	public ModelTrafficLight(ConfigTrafficLight config, MQO model, File file, boolean normalize) {
 		this.config = config;
 		this.file = file;
 		
@@ -29,9 +54,11 @@ public class ModelTrafficLight extends ModelBase<ConfigTrafficLight> implements 
 		ArrayList<String> objects = new ArrayList<>();
 		objects.addAll(config.getBody());
 		objects.addAll(config.getLight());
-		this.model = model.normalize(config.getSize(), objects);
-		//new Thread(() -> { this.model = model.normalize(config.getSize(), objects); this.isReady = true;}).start(); // 時間かかるのでスレッド処理
+		this.model = model;
 		
+		if (normalize) {
+			this.model = model.normalize(config.getSize(), objects);
+		}
 	}
 	
 	public boolean isNeedChangeTex() {

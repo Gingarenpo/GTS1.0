@@ -1,6 +1,9 @@
 package jp.gingarenpo.gts;
 
 import jp.gingarenpo.gts.arm.ItemTrafficArm;
+import jp.gingarenpo.gts.button.BlockTrafficButton;
+import jp.gingarenpo.gts.button.PacketTrafficButton;
+import jp.gingarenpo.gts.button.TileEntityTrafficButton;
 import jp.gingarenpo.gts.controller.BlockTrafficController;
 import jp.gingarenpo.gts.controller.PacketTrafficController;
 import jp.gingarenpo.gts.controller.TileEntityTrafficController;
@@ -141,6 +144,7 @@ public class GTS {
 		GameRegistry.registerTileEntity(TileEntityTrafficController.class, "control");
 		GameRegistry.registerTileEntity(TileEntityTrafficLight.class, "light");
 		GameRegistry.registerTileEntity(TileEntityTrafficPole.class, "pole");
+		GameRegistry.registerTileEntity(TileEntityTrafficButton.class, "button");
 		
 		// GUIの登録
 		NetworkRegistry.INSTANCE.registerGuiHandler(GTS.INSTANCE, new GTSGUIHandler()); // GUI
@@ -181,6 +185,7 @@ public class GTS {
 		public static final Block control = null; // 制御機
 		public static final Block light = null; // 信号機
 		public static final Block pole = null; // ポール
+		public static final Block button = null; // 押ボタン箱
 	}
 	
 	/**
@@ -194,6 +199,7 @@ public class GTS {
       	public static final ItemBlock control = (ItemBlock) new ItemBlock(Blocks.control).setRegistryName(Blocks.control.getRegistryName()); // 制御機のドロップ扱い
 		public static final ItemBlock light = (ItemBlock) new ItemBlock(Blocks.light).setRegistryName(Blocks.light.getRegistryName()); // 信号機のドロップ扱い
 		public static final ItemBlock pole = (ItemBlock) new ItemBlock(Blocks.pole).setRegistryName(Blocks.pole.getRegistryName()); // ポールのドロップ扱い
+		public static final ItemBlock button = (ItemBlock) new ItemBlock(Blocks.button).setRegistryName(Blocks.button.getRegistryName()); // 押ボタン箱のドロップ扱い
 		
 		public static final Item arm = null;
 	}
@@ -214,6 +220,7 @@ public class GTS {
 					new ItemBlock(Blocks.control).setRegistryName(Blocks.control.getRegistryName()),
 					new ItemBlock(Blocks.light).setRegistryName(Blocks.light.getRegistryName()),
 					new ItemBlock(Blocks.pole).setRegistryName(Blocks.pole.getRegistryName()),
+					new ItemBlock(Blocks.button).setRegistryName(Blocks.button.getRegistryName()),
 					new ItemTrafficArm()
 			);
 		}
@@ -226,7 +233,8 @@ public class GTS {
 			event.getRegistry().registerAll(
 					new BlockTrafficLight(),
 					new BlockTrafficController(),
-					new BlockTrafficPole()
+					new BlockTrafficPole(),
+					new BlockTrafficButton()
 			); // ブロックを実際に登録
 		}
 		
@@ -251,6 +259,7 @@ public class GTS {
 			GTSPacket.registerPacket(PacketTrafficController.class, PacketTrafficController.class, Side.SERVER);
 			GTSPacket.registerPacket(PacketTrafficLight.class, PacketTrafficLight.class, Side.SERVER);
 			GTSPacket.registerPacket(PacketTrafficPole.class, PacketTrafficPole.class, Side.SERVER);
+			GTSPacket.registerPacket(PacketTrafficButton.class, PacketTrafficButton.class, Side.SERVER);
 		}
 		
 		/**
