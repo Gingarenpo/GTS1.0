@@ -397,9 +397,7 @@ public class MQO implements Serializable, Cloneable {
 	 */
 
 	public MQO clone() {
-		MQO clone = new MQO();
-		clone.object = new HashMap<>(this.object); // このオブジェクトと全く同じだけど参照が異なるコピーを作る
-		return clone;
+		return this;
 	}
 
 	public static class MQOException extends RuntimeException {

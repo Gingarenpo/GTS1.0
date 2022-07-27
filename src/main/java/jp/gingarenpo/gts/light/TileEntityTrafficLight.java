@@ -53,7 +53,7 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 			config.getTextures().setBaseTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
 			config.getTextures().setLightTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
 			config.getTextures().setNoLightTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
-			
+			System.out.println(config);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -26,6 +26,7 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 	private boolean showBoth = true; // これをfalseにすると、「_back」とつけられたオブジェクトを背面灯器と認識し描画しなくなる（ようにしたいために予約）。指定しないとtrue
 	private float opacity = 0.1f; // 光っていない部分の暗くなる比率。デフォルトほぼ真っ暗。値を大きくすればするほど明るくなる。
 	
+	
 	private double[] centerPosition = new double[3]; // モデルの中心ずらし位置。初期値0。XYZで指定、ブロックの1辺＝1とする
 	
 	public ConfigTrafficLight() {
@@ -130,6 +131,8 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 	 */
 	public static class TexturePath implements Serializable {
 		
+		
+		
 		private String base; // ベースのテクスチャ。信号機で言えば灯体とか取付金具とか
 		private String light; // 発光部分のテクスチャで、点灯した際のもの。未指定の場合はベースのテクスチャが使われる。
 		private String noLight; // 未点灯状態の発光部分テクスチャ。こちらは任意で、指定がない場合はlightと同じものが使われる。
@@ -197,7 +200,17 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 			this.noLightTex = noLightTex;
 		}
 		
-		
+		@Override
+		public String toString() {
+			return "TexturePath{" +
+						   "base='" + base + '\'' +
+						   ", light='" + light + '\'' +
+						   ", noLight='" + noLight + '\'' +
+						   ", baseTex=" + baseTex +
+						   ", lightTex=" + lightTex +
+						   ", noLightTex=" + noLightTex +
+						   "}";
+		}
 	}
 	
 	/**
@@ -208,6 +221,8 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 		private String name; // 現示名。青とか黄色とかを表すものをつければいいと思う。
 		private int tick = 0; // 点滅周期。Tickで指定する。指定がない場合や0の場合は点滅を行わない
 		private ArrayList<String> objects; // その現示の際に光らせるオブジェクト名を指定する。配列で指定すると全部光るようになる。
+		
+		private static final long serialVersionUID = 1L;
 		
 		public LightObject() {
 			// もうコメントいいよね

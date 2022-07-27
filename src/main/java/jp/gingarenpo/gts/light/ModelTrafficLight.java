@@ -50,12 +50,17 @@ public class ModelTrafficLight extends ModelBase<ConfigTrafficLight> implements 
 	 * あくまで保持するのはテクスチャ座標であり、実際のテクスチャのリソースロケーションはクライアント側で保持するべき。
 	 */
 	public void reloadTexture() {
+		if (isDummy()) {
+			GTS.GTSLog.debug("This is dummy model. shouldn't reload texture.");
+			return;
+		}
+		
 		if (GTS.loader == null) {
 			GTS.GTSLog.warn("Warning. loader is not ready.");
 			return;
 		}
 		if (file == null) {
-			GTS.GTSLog.warn("Warning. file is null. Is it a dummy model?");
+			GTS.GTSLog.warn("Warning. file is null.");
 			return;
 		}
 		Pack p = GTS.loader.getPacks().get(file);
@@ -68,7 +73,7 @@ public class ModelTrafficLight extends ModelBase<ConfigTrafficLight> implements 
 		for (ModelBase m: p.getModels()) {
 			if (!(m instanceof ModelTrafficLight)) continue;
 			if (m.equals(this)) {
-				System.out.println(((ModelTrafficLight) m).config.getTextures().getBase());
+				// System.out.println(((ModelTrafficLight) m).config.getTextures().getBase());
 				// mのテクスチャを読み込む
 				this.getConfig().getTextures().setBase(((ModelTrafficLight) m).config.getTextures().getBase());
 				this.getConfig().getTextures().setLight(((ModelTrafficLight) m).config.getTextures().getLight());
@@ -92,6 +97,14 @@ public class ModelTrafficLight extends ModelBase<ConfigTrafficLight> implements 
 					   ", model=" + model +
 					   ", file=" + file +
 					   '}';
+	}
+	
+	/**
+	 * 登録されているコンフィグがダミー用かどうかを判別する。
+	 * @return ダミーならtrue
+	 */
+	public boolean isDummy() {
+		return config instanceof DummyConfigTrafficLight;
 	}
 	
 //	/**

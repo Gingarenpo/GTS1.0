@@ -127,6 +127,12 @@ public class MQOFace implements Serializable, Cloneable {
 		return y + 0.4;
 	}
 
+	public MQOFace clone() {
+		MQOFace clone = new MQOFace(this.mqo);
+		clone.uv = new ArrayList<>(uv);
+		clone.v = v;
+		return clone;
+	}
 
 	
 }

@@ -13,6 +13,8 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
+import java.util.HashMap;
+
 
 /**
  * 信号機を実際に描画するレンダラー
@@ -20,9 +22,9 @@ import org.lwjgl.opengl.GL11;
 public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTrafficLight> {
 	
 	// ロケーションはサーバーに保持しても意味がない
-	private ResourceLocation baseTex;
-	private ResourceLocation lightTex;
-	private ResourceLocation noLightTex;
+	private HashMap<String, ResourceLocation> baseTexs = new HashMap<>();
+	private HashMap<String, ResourceLocation> lightTexs = new HashMap<>();
+	private HashMap<String, ResourceLocation> noLightTexs = new HashMap<>();
 	
 	
 	/**
@@ -41,39 +43,8 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		super.render(te, x, y, z, partialTicks, destroyStage, alpha); // 一応
 		// long time = System.currentTimeMillis();
 		
-		if (te.getAddon() == null  || te.getAddon().getModel() == null) {
-			// モデルがない場合や描画できない場合
-			GTS.GTSLog.warn("Warning. Cannot render model because model is null or not ready to render.");
-			return;
-		}
-		
-
-		
-		if (te.getAddon().getConfig().getTextures().getBaseTex() == null || te.getAddon().isNeedChangeTex()) {
-			// そもそもテクスチャが用意されていない、あるいは変更が要求された
-			if (te.getAddon().getFile() == null) {
-				// ダミーを代わりに入れる
-				te.setDummyModel();
-			}
-			te.getAddon().reloadTexture(); // リロード
-			baseTex = null;
-			lightTex = null;
-			noLightTex = null;
-			te.getAddon().doneChangeTex();
-		}
-		
-		if (baseTex == null) {
-			// 新しくDynamicTextureを用意する
-			baseTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(te.getAddon().getConfig().getId() + "_base", new DynamicTexture(te.getAddon().getConfig().getTextures().getBaseTex()));
-		}
-		if (lightTex == null) {
-			// 新しくDynamicTextureを用意する
-			lightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(te.getAddon().getConfig().getId() + "_light", new DynamicTexture(te.getAddon().getConfig().getTextures().getLightTex()));
-		}
-		if (noLightTex == null) {
-			// 新しくDynamicTextureを用意する
-			noLightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(te.getAddon().getConfig().getId() + "_nolight", new DynamicTexture(te.getAddon().getConfig().getTextures().getNoLightTex()));
-		}
+		ResourceLocation[] textures = this.getModelTextures(te);
+		if (textures == null) return; // テクスチャがないと落ちるのでならスキップする
 		
 		// サイクルチェック
 		ConfigTrafficLight.LightObject lightObject = null; // 現在光っているべきオブジェクトを格納
@@ -153,7 +124,7 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 			float color = nolight ? te.getAddon().getConfig().getOpacity() : 0.0f;
 			
 			// テクスチャのバインドを決める
-			this.bindTexture(nolight ? noLightTex : baseTex);
+			this.bindTexture(nolight ? textures[2] : textures[0]);
 			
 			o.draw(t.getBuffer(), color);
 			t.draw(); // ベース部分を描画
@@ -183,7 +154,7 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 				}
 			}
 			
-			this.bindTexture(lightTex);
+			this.bindTexture(textures[1]);
 			
 			if (!render) {
 				// 描画の必要性がない場合
@@ -210,6 +181,72 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		GL11.glPopMatrix();
 		
 		// System.out.println((System.currentTimeMillis() - time) + "ms"); // レンダリング性能計測用
+	}
+	
+	/**
+	 * このTileEntityを描画するために必要なテクスチャをバッファから取得する。
+	 * もしない場合は作成を試みる。作成ができない場合永遠にレンダリングがされないことになるので注意。
+	 * もし作成されない場合はnullのままの可能性があるので気をつける。
+	 *
+	 * リソースの割り当てに成功すると、「base」「light」「nolight」の順番に3つのリソースロケーションを格納した
+	 * リソースロケーションの配列が戻る。
+	 *
+	 * @return リソースロケーション。ない場合はnull
+	 *
+	 * @param te 描画したいTileEntity
+	 */
+	private ResourceLocation[] getModelTextures(TileEntityTrafficLight te) {
+		if (te.getAddon() == null) {
+			GTS.GTSLog.warn("Warning. addon is null.");
+			return null;
+		}
+		
+		if (!te.getAddon().isDummy() && te.getAddon().getFile() == null) {
+			// ダミーモデルに差し替えてそれをテクスチャとして返す
+			te.setDummyModel();
+			
+			// ダミーモデルに差し替えたらあとは存在しなければ作成してくれるはず
+		}
+		else if (te.getAddon().getConfig().getTextures().getBase() == null || te.getAddon().getConfig().getTextures().getBaseTex() == null) {
+			// リソースが存在しないので割り当てるが
+			te.getAddon().reloadTexture(); // テクスチャを再読み込みする（ロケータを戻す）
+		}
+		
+		// 生成に失敗した場合はそもそもreloadTextureでエラーが出るのでもう返しちゃう
+		if (te.getAddon().getConfig().getTextures().getBaseTex() == null || te.getAddon().getConfig().getTextures().getLightTex() == null || te.getAddon().getConfig().getTextures().getNoLightTex() == null) {
+			GTS.GTSLog.warn("Warning. dynamic texture is null.");
+			return null;
+		}
+		
+		// テクスチャの取得を試みる
+		ResourceLocation baseTex = this.baseTexs.get(te.getAddon().getConfig().getTextures().getBase());
+		ResourceLocation lightTex = this.lightTexs.get(te.getAddon().getConfig().getTextures().getLight());
+		ResourceLocation noLightTex = this.noLightTexs.get(te.getAddon().getConfig().getTextures().getNoLight());
+		
+		if (baseTex == null) {
+			
+			// テクスチャを再代入する（この時点では3つともあるはず）
+			baseTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(
+					te.getAddon().getConfig().getId() + "_base",
+					new DynamicTexture(te.getAddon().getConfig().getTextures().getBaseTex())
+			);
+			lightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(
+					te.getAddon().getConfig().getId() + "_light",
+					new DynamicTexture(te.getAddon().getConfig().getTextures().getLightTex())
+			);
+			noLightTex = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(
+					te.getAddon().getConfig().getId() + "_nolight",
+					new DynamicTexture(te.getAddon().getConfig().getTextures().getNoLightTex())
+			);
+			
+			// 今後使えるようにこのリソースロケーションをHashMapに追加する
+			this.baseTexs.put(te.getAddon().getConfig().getTextures().getBase(), baseTex);
+			this.lightTexs.put(te.getAddon().getConfig().getTextures().getLight(), lightTex);
+			this.noLightTexs.put(te.getAddon().getConfig().getTextures().getNoLight(), noLightTex);
+		}
+		
+		// ここまで来たら3つとも使えるのでそれを返す
+		return new ResourceLocation[] {baseTex, lightTex, noLightTex};
 	}
 	
 	

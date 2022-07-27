@@ -65,5 +65,12 @@ public class MQOObject implements Serializable, Cloneable {
 			f.drawFace(b, color);
 		}
 	}
+	
+	public MQOObject clone() {
+		MQOObject clone = new MQOObject(this.mqo, this.name);
+		clone.vertex = new ArrayList<>(this.vertex);
+		clone.face = new ArrayList<>(this.face);
+		return clone;
+	}
 
 }
