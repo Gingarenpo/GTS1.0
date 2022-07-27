@@ -36,7 +36,8 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 	@Override
 	public String toString() {
 		return "ConfigTrafficLight{" +
-					   "textures=" + textures +
+					   "id=" + id +
+					   ",textures=" + textures +
 					   ", body=" + body +
 					   ", light=" + light +
 					   ", patterns=" + patterns +

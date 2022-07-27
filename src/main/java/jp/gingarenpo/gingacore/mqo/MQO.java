@@ -313,7 +313,7 @@ public class MQO implements Serializable, Cloneable {
 		
 		
 		// 処理終了（faceの方には頂点番号しか格納していないので弄る必要がない）
-		System.out.println("正規化後座標最小XYZ: " + minmax[0][0] + ", " + minmax[0][1] + ", " + minmax[0][2] + ", 最大XYZ: " + minmax[1][0] + ", " + minmax[1][1] + ", " + minmax[1][2]);
+		//System.out.println("正規化後座標最小XYZ: " + minmax[0][0] + ", " + minmax[0][1] + ", " + minmax[0][2] + ", 最大XYZ: " + minmax[1][0] + ", " + minmax[1][1] + ", " + minmax[1][2]);
 		return original;
 	}
 	

@@ -115,7 +115,7 @@ public class GTS {
 	public void preInit(FMLPreInitializationEvent event) throws IOException {
 		// イベントを登録する
 		MinecraftForge.EVENT_BUS.register(new GTSWorldEvent()); // ワールドイベント
-	
+		
 		
 		// ログを登録する
 		GTSLog = LogManager.getLogger("GTS");

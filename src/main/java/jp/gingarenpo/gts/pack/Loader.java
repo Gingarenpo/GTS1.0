@@ -10,6 +10,7 @@ import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.light.ModelTrafficLight;
 import jp.gingarenpo.gts.pole.ConfigTrafficPole;
 import jp.gingarenpo.gts.pole.ModelTrafficPole;
+import net.minecraftforge.fml.common.ProgressManager;
 import org.apache.logging.log4j.Level;
 
 import javax.imageio.ImageIO;
@@ -198,6 +199,7 @@ public class Loader {
 				
 				// 各種コンフィグに対して処理を追加する
 				ArrayList<ModelBase> m = new ArrayList<>(); // 正常に追加したパックモデル
+				ProgressManager.ProgressBar bar = ProgressManager.push("GTS Model Config Parse", configs.size());
 				for (ConfigBase configBase : configs) {
 					if (!models.containsKey(configBase.getModel())) {
 						// モデルが存在しない場合（そもそもこのパックは使用不可）
@@ -246,10 +248,11 @@ public class Loader {
 						m.add(new ModelTrafficPole(config, models.get(config.getModel()), pack));
 						
 					}
-					
+					bar.step(configBase.getId());
 					
 					
 				}
+				ProgressManager.pop(bar);
 				
 				// パックを生成する
 				res = new Pack((String) p.getOrDefault("name", "<No Name>"), (String) p.getOrDefault("credit", "<No Credit>"), m, pack); // これで生成
@@ -279,7 +282,9 @@ public class Loader {
 		GTS.GTSLog.log(Level.INFO, "Pack search started.");
 		File[] zips = search.listFiles((dir, name) -> (name.endsWith("zip"))); // Zipファイルだけを選別
 		if (zips == null) throw new IOException("Can't find pack at search directory.");
+		ProgressManager.ProgressBar bar = ProgressManager.push("GTS Model Pack Search", zips.length);
 		for (File zip: zips) {
+			bar.step(zip.getName());
 			// 見つかったZipファイルの数だけ繰り返す
 			Pack p = getPack(zip); // パックを探す
 			if (p != null) {
@@ -287,8 +292,10 @@ public class Loader {
 				packs.put(zip, p);
 				GTS.GTSLog.log(Level.INFO, "GTS Addon Pack '" + p.getName() + "' in " + zip.getAbsolutePath() + " loaded. (models: " + p.getModels().size() + ")");
 			}
+			
 		}
 		GTS.GTSLog.log(Level.INFO, "Pack search ended. Add " + packs.size() +  " packs.");
 		this.completeLoad = true;
+		ProgressManager.pop(bar);
 	}
 }

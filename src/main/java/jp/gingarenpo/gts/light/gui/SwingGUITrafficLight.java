@@ -56,6 +56,7 @@ public class SwingGUITrafficLight extends JFrame {
 		super();
 		this.tetl = tetl;
 		this.tl = this.tetl.getData();
+		this.model = this.tetl.getAddon();
 		
 		this.getContentPane().setPreferredSize(new Dimension(width, height));
 		this.pack();
@@ -101,7 +102,6 @@ public class SwingGUITrafficLight extends JFrame {
 			for (ModelBase model: pack.getModels()) {
 				// Traffic Lightと一致するものを取り出す
 				if (!(model instanceof ModelTrafficLight)) {
-					i++;
 					continue;
 				}
 				
@@ -114,7 +114,6 @@ public class SwingGUITrafficLight extends JFrame {
 				i++;
 			}
 		}
-		System.out.println(i);
 		
 		
 		// モデルパック選択肢を表示

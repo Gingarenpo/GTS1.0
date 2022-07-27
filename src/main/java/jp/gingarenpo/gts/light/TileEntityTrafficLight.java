@@ -53,7 +53,6 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 			config.getTextures().setBaseTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
 			config.getTextures().setLightTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
 			config.getTextures().setNoLightTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tl.png")).getInputStream()));
-			System.out.println(config);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -114,7 +113,6 @@ public class TileEntityTrafficLight extends GTSTileEntity implements ITickable, 
 			try (ObjectInputStream ois = new ObjectInputStream(bais)) {
 				this.addon.setFile((File) ois.readObject());
 				this.addon.reloadModel();
-				// this.addon.reloadTexture();
 			}
 		} catch (IOException | ClassNotFoundException e) {
 			// メモリ不足などでストリームを確保できなかった場合、あるいはオブジェクトが正しく読み込まれなかった時
