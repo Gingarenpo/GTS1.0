@@ -97,7 +97,6 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 	public void update() {
 		if (this.world.isRemote) return; // クライアント側では実行しない
 		boolean cycleChange = data.checkCycle(this.world); // 制御機のデータを更新する
-		this.markDirty();
 		if (!cycleChange) {
 			// world.notifyBlockUpdate(this.pos, world.getBlockState(pos), world.getBlockState(pos), 2); // なんかなくても動く
 			// this.search(); // サイクル変わったら再読み込みするのは重いので止める

@@ -132,19 +132,16 @@ public class GTS {
 			}
 		}
 		
-		// パックを登録する
-		loader = new Loader();
-		loader.load(GTSModDir); // 検索をかける
-		
 		
 		// プロキシ処理
 		proxy.registerTESRs();
 		
 		// TileEntityの登録（非推奨になっているけどこれで登録できるので）
-		GameRegistry.registerTileEntity(TileEntityTrafficController.class, "control");
-		GameRegistry.registerTileEntity(TileEntityTrafficLight.class, "light");
-		GameRegistry.registerTileEntity(TileEntityTrafficPole.class, "pole");
-		GameRegistry.registerTileEntity(TileEntityTrafficButton.class, "button");
+		// 注意：キー変えたので既存のワールドは開けない
+		GameRegistry.registerTileEntity(TileEntityTrafficController.class, "gts:control");
+		GameRegistry.registerTileEntity(TileEntityTrafficLight.class, "gts:light");
+		GameRegistry.registerTileEntity(TileEntityTrafficPole.class, "gts:pole");
+		GameRegistry.registerTileEntity(TileEntityTrafficButton.class, "gts:button");
 		
 		// GUIの登録
 		NetworkRegistry.INSTANCE.registerGuiHandler(GTS.INSTANCE, new GTSGUIHandler()); // GUI
@@ -161,7 +158,6 @@ public class GTS {
 	 */
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent event) {
-	
 	}
 	
 	/**
@@ -169,8 +165,10 @@ public class GTS {
 	 * ラストの初期化イベント。他のModの初期化が済んでいるのでそれとなんかして使いたい場合にどうぞ。
 	 */
 	@Mod.EventHandler
-	public void postInit(FMLPostInitializationEvent event) {
-	
+	public void postInit(FMLPostInitializationEvent event) throws IOException {
+		// パックを登録する
+		loader = new Loader();
+		loader.load(GTSModDir); // 検索をかける
 	}
 	
 	/**
@@ -182,10 +180,10 @@ public class GTS {
 	 */
 	@GameRegistry.ObjectHolder(MOD_ID)
 	public static class Blocks {
-		public static final Block control = null; // 制御機
-		public static final Block light = null; // 信号機
-		public static final Block pole = null; // ポール
-		public static final Block button = null; // 押ボタン箱
+		public static final BlockTrafficController control = null; // 制御機
+		public static final BlockTrafficLight light = null; // 信号機
+		public static final BlockTrafficPole pole = null; // ポール
+		public static final BlockTrafficButton button = null; // 押ボタン箱
 	}
 	
 	/**
@@ -196,12 +194,20 @@ public class GTS {
 	 */
 	@GameRegistry.ObjectHolder(MOD_ID)
 	public static class Items {
-      	public static final ItemBlock control = (ItemBlock) new ItemBlock(Blocks.control).setRegistryName(Blocks.control.getRegistryName()); // 制御機のドロップ扱い
-		public static final ItemBlock light = (ItemBlock) new ItemBlock(Blocks.light).setRegistryName(Blocks.light.getRegistryName()); // 信号機のドロップ扱い
-		public static final ItemBlock pole = (ItemBlock) new ItemBlock(Blocks.pole).setRegistryName(Blocks.pole.getRegistryName()); // ポールのドロップ扱い
-		public static final ItemBlock button = (ItemBlock) new ItemBlock(Blocks.button).setRegistryName(Blocks.button.getRegistryName()); // 押ボタン箱のドロップ扱い
+		@GameRegistry.ObjectHolder("control")
+      	public static final ItemBlock control_item = null; // 制御機のドロップ扱い
 		
-		public static final Item arm = null;
+		@GameRegistry.ObjectHolder("light")
+		public static final ItemBlock light_item = null; // 信号機のドロップ扱い
+		
+		@GameRegistry.ObjectHolder("pole")
+		public static final ItemBlock pole_item = null; // ポールのドロップ扱い]
+		
+		@GameRegistry.ObjectHolder("button")
+		public static final ItemBlock button_item = null; // 押ボタン箱のドロップ扱い
+		
+		
+		public static final ItemTrafficArm arm = null;
 	}
 	
 	/**
@@ -215,6 +221,7 @@ public class GTS {
 		 * Listen for the register event for creating custom items
 		 */
 		@SubscribeEvent
+		@SuppressWarnings("null")
 		public static void addItems(RegistryEvent.Register<Item> event) {
 			event.getRegistry().registerAll(
 					new ItemBlock(Blocks.control).setRegistryName(Blocks.control.getRegistryName()),
@@ -231,12 +238,14 @@ public class GTS {
 		@SubscribeEvent
 		public static void addBlocks(RegistryEvent.Register<Block> event) {
 			event.getRegistry().registerAll(
-					new BlockTrafficLight(),
 					new BlockTrafficController(),
+					new BlockTrafficLight(),
 					new BlockTrafficPole(),
 					new BlockTrafficButton()
 			); // ブロックを実際に登録
 		}
+	
+		
 		
 		/**
 		 * モデルの登録を行うためのイベントを発火する場所。

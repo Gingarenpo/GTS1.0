@@ -479,7 +479,7 @@ public class MQO implements Serializable, Cloneable {
 	 * @return 最小値と最大値
 	 */
 	public double[][] getMinMaxPosition() {
-		return getMinMaxPosition(new ArrayList<>());
+		return getMinMaxPosition(getObjectNames());
 	}
 	
 }

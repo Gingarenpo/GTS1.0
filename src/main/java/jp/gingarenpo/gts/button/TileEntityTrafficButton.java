@@ -100,7 +100,9 @@ public class TileEntityTrafficButton extends GTSTileEntity implements Serializab
 				this.addon.reloadTexture();
 				
 				if (this.addon.getFile() == null) {
+					GTS.GTSLog.debug("Button dummy used");
 					this.setDummyModel();
+					System.out.println(this.addon);
 				}
 			}
 		} catch (IOException | ClassNotFoundException e) {

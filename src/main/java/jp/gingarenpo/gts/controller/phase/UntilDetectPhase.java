@@ -32,7 +32,7 @@ public class UntilDetectPhase extends Phase implements Serializable {
 	 */
 	@Override
 	public boolean shouldContinue(TrafficController controller, long totalTicks, boolean detected, World world) {
-		return detected && ticks > waitTick;
+		return !(detected && ticks > waitTick);
 	}
 	
 	public long getWaitTick() {
