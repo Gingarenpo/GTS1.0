@@ -2,8 +2,9 @@ package jp.gingarenpo.gts.button;
 
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
-import jp.gingarenpo.gts.core.ModelBase;
+import jp.gingarenpo.gts.core.model.ModelBase;
 import jp.gingarenpo.gts.pack.Pack;
+import net.minecraft.util.ResourceLocation;
 
 import java.io.File;
 
@@ -11,6 +12,8 @@ import java.io.File;
  * 押ボタン箱のモデル。と言っても、保持するのは基本的にModelBaseと同じである。
  */
 public class ModelTrafficButton extends ModelBase<ConfigTrafficButton> {
+	
+	private static final long serialVersionUID = 1L;
 	
 	/**
 	 * テクスチャの変更が必要な場合にフラグが立つ。
@@ -75,5 +78,13 @@ public class ModelTrafficButton extends ModelBase<ConfigTrafficButton> {
 	 */
 	public void doneChangeTex() {
 		needChangeTex = false;
+	}
+	
+	/**
+	 * この押ボタンが押されたときのサウンドリソースを返す。
+	 * @return
+	 */
+	public ResourceLocation getSoundLocation() {
+		return new ResourceLocation(GTS.MOD_ID, config.getSoundPath());
 	}
 }

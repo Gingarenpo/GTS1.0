@@ -32,6 +32,7 @@ public class DummyConfigTrafficButton extends ConfigTrafficButton implements Ser
 		this.setBaseTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tb.png")).getInputStream()));
 		this.setPushTex(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tb.png")).getInputStream()));
 		this.size = 0.5f;
+		this.setSoundPath("sounds/push_detect.ogg");
 	
 	}
 }

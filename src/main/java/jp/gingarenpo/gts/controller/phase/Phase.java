@@ -14,13 +14,14 @@ import java.util.LinkedHashMap;
 /**
  * サイクルに登録すべき信号の状態を格納したフェーズという状態を保持するクラス。
  * 各状態における信号の色（チャンネル）を保持することになる。
- * このクラス自体は抽象クラスの為、そのまま使用することは不可能。アドオンなどで拡張する際は
+ * 抽象クラスにするといろいろ問題が発生するのでこれもインスタンスを作れるようにしているが、
+ * このクラスを使うべきではない。
  * このクラスを継承し、新たなフェーズを作成すること。
  *
  * 継続条件を主に変えることになる。
  * ※PhaseBaseというクラスがあるがこちらは組み込みクラスでありこのクラスを継承することはあまりお勧めしない
  */
-public abstract class Phase implements Serializable {
+public class Phase implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -174,7 +175,9 @@ public abstract class Phase implements Serializable {
 	 * @param world 制御機がある場所のワールドインスタンス。
 	 * @return このフェーズを続行するべきならばtrue、終了ならばfalse
 	 */
-	public abstract boolean shouldContinue(TrafficController controller, long totalTicks, boolean detected, World world);
+	public boolean shouldContinue(TrafficController controller, long totalTicks, boolean detected, World world) {
+		return false;
+	}
 	
 	public LinkedHashMap<Long, ConfigTrafficLight.LightObject> getChannels() {
 		return channels;

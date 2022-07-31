@@ -1,0 +1,8 @@
+{
+  "push_detect": {
+    "category": "block",
+    "sounds": [
+      "gts:push_detect"
+    ]
+  }
+}

@@ -3,9 +3,12 @@ package jp.gingarenpo.gts.light;
 import jp.gingarenpo.gingacore.helper.GMathHelper;
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.arm.ItemTrafficArm;
+import jp.gingarenpo.gts.arm.ModelTrafficArm;
 import jp.gingarenpo.gts.arm.TrafficArm;
+import jp.gingarenpo.gts.core.model.ModelBase;
 import jp.gingarenpo.gts.light.gui.SwingGUITrafficLight;
 import jp.gingarenpo.gts.pole.TileEntityTrafficPole;
+import jp.gingarenpo.gts.pole.gui.SwingGUITrafficPole;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -184,13 +187,13 @@ public class BlockTrafficLight extends BlockContainer {
 		int[] xyz = ist.getIntArray("gts_pre_connect_xyz");
 		if (xyz.length != 3) {
 			GTS.GTSLog.warn("Can't joint Traffic arm because illegal data.");
-			return true;
+			return false;
 		}
 		
 		TileEntity from = worldIn.getTileEntity(new BlockPos(xyz[0], xyz[1], xyz[2])); // 接続元のポールを取得
 		if (!(from instanceof TileEntityTrafficPole)) {
 			GTS.GTSLog.warn("Can't joint Traffic arm because Traffic pole is missing.");
-			return true;
+			return false;
 		}
 		
 		TrafficArm a = ((TileEntityTrafficPole) from).getArm();
@@ -198,16 +201,35 @@ public class BlockTrafficLight extends BlockContainer {
 		if (a.getTo().contains(te)) {
 			// 既に接続済み
 			GTS.GTSLog.warn("Already Connected.");
-			return true;
+			return false;
 		}
 		
+		// モデルの変更があればアームの形状も変更する
+		// ItemStackの状態を確認する
+		if (is.getItem() != GTS.Items.arm) return connect((TileEntityTrafficPole) from, a, ist); // 違う者の場合は無視（あり得ないけど）
+		
+		// ItemStackのモデル名を確認する
+		NBTTagCompound c = is.getTagCompound();
+		if (c == null) return connect((TileEntityTrafficPole) from, a, ist);; // 無視
+		String name = c.getString("gts_item_model_pole"); // NBTから取得したパック名
+		ModelBase model = SwingGUITrafficPole.getModelFromChoiceName(name);
+		if (model == null) {
+			GTS.GTSLog.warn("ItemStack declare default model as " + name + ", but it is not found. dummy used.");
+			return connect((TileEntityTrafficPole) from, a, ist);
+		}
+		a.setAddon((ModelTrafficArm) model); // 入れる
+		
+		return connect((TileEntityTrafficPole) from, a, ist);
+	}
+	
+	private boolean connect(TileEntityTrafficPole from, TrafficArm to, NBTTagCompound ist) {
 		// ようやく接続できる
-		a.add(new double[] { pos.getX(), pos.getY(), pos.getZ() });
-		((TileEntityTrafficPole) from).endConnect();
-		((TileEntityTrafficPole) from).setArm(a); // アームを追加
+		to.add(new double[] { from.getPos().getX(), from.getPos().getY(), from.getPos().getZ() });
+		from.endConnect();
+		from.setArm(to); // アームを追加
 		ist.setIntArray("gts_pre_connect_xyz", new int[1]); // 1個しか要素がない状態は無接続とする
 		ist.setBoolean("gts_pre_connect", false);
-		((TileEntityTrafficPole) from).calcRenderBoundingBox(); // レンダリングボックスの再計算を要求する
+		from.calcRenderBoundingBox(); // レンダリングボックスの再計算を要求する
 		return true;
 	}
 }

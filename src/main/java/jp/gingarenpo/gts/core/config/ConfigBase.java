@@ -1,4 +1,4 @@
-package jp.gingarenpo.gts.core;
+package jp.gingarenpo.gts.core.config;
 
 import java.io.Serializable;
 

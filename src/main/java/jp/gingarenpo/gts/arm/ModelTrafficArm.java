@@ -1,7 +1,7 @@
 package jp.gingarenpo.gts.arm;
 
 import jp.gingarenpo.gingacore.mqo.MQO;
-import jp.gingarenpo.gts.core.ModelBase;
+import jp.gingarenpo.gts.core.model.ModelBase;
 
 /**
  * 注意：開始部分のオブジェクトを指定されたサイズで正規化します
@@ -19,5 +19,10 @@ public class ModelTrafficArm extends ModelBase<ConfigTrafficArm> {
 			this.model = model.normalize(config.getSize(), config.startObject);
 			
 		}
+	}
+	
+	@Override
+	public void reloadTexture() {
+	
 	}
 }

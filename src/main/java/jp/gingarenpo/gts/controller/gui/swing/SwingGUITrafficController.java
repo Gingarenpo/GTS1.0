@@ -1,23 +1,33 @@
 package jp.gingarenpo.gts.controller.gui.swing;
 
+import com.google.common.reflect.ClassPath;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.controller.TrafficController;
 import jp.gingarenpo.gts.controller.cycle.Cycle;
 import jp.gingarenpo.gts.controller.cycle.TimeCycle;
 import jp.gingarenpo.gts.controller.phase.Phase;
 import jp.gingarenpo.gts.controller.phase.PhaseBase;
 import jp.gingarenpo.gts.controller.phase.UntilDetectPhase;
+import jp.gingarenpo.gts.core.json.Exclude;
+import jp.gingarenpo.gts.core.json.ExcludeJsonStrategy;
 import jp.gingarenpo.gts.exception.DataExistException;
 import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.*;
 
 /**
  * Swingの機能を使って擬似的なGUIを作成する。
@@ -31,13 +41,14 @@ public class SwingGUITrafficController extends JFrame {
 	/**
 	 * このGUIが変更をくわえようとする制御機のインスタンス。直接変更を加えるため参照は同じ必要がある。
 	 */
-	private TrafficController tc;
+	private final TrafficController tc;
 	
 	public static final int maxWidth = 960;
 	public static final int maxHeight = 540;
 	
-	private int width;
-	private int height;
+	private final int width;
+	private final int height;
+	
 	
 	/**
 	 * 左側1/4に配置するベースの情報を入れるためのパネル
@@ -47,20 +58,39 @@ public class SwingGUITrafficController extends JFrame {
 	/**
 	 * サイクルを入れるためのスクロール可能パネル（コンテナ）
 	 */
-	private JScrollPane cyclesContainer;
+	private final JScrollPane cyclesContainer;
 	
 	/**
 	 * サイクルパネルを配置するために入れるべきヤツ
 	 */
-	private JPanel cyclesPanel;
+	private final JPanel cyclesPanel;
+	
+	public static final JsonDeserializer<Phase> JSON_DESERIALIZER_PHASE = (json, t, ctx) -> {
+		System.out.println(json);
+		try {
+			Set<ClassPath.ClassInfo> all = ClassPath.from(Thread.currentThread().getContextClassLoader()).getAllClasses();
+			for (ClassPath.ClassInfo c: all) {
+				if (! c.getPackageName().equals(Phase.class.getPackage().getName()) || c.getSimpleName().equals("Phase")) continue;
+				for (Field f: c.load().getDeclaredFields()) {
+					if (json.getAsJsonObject().get(f.getName()) != null) {
+						return ctx.deserialize(json, c.load());
+					}
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	};
 	
 	GridBagLayout cyclesPanelLayout = new GridBagLayout();
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		// 作成には制御機のインスタンスが必要なので適当に作って入れる
 		TrafficController tc = new TrafficController();
 		SwingGUITrafficController stc = new SwingGUITrafficController(tc);
 		stc.setVisible(true);
+		
 	}
 	
 	/**
@@ -133,6 +163,15 @@ public class SwingGUITrafficController extends JFrame {
 		this.setLocationRelativeTo(null); // 画面中央へ
 	}
 	
+	private void refreshBase() {
+		// 左側のパネル初期化
+		this.remove(basePanel);
+		basePanel = new BaseInfoPanel();
+		this.add(basePanel);
+		this.getContentPane().revalidate();
+		this.getContentPane().repaint();
+	}
+	
 	private void refreshCycles() {
 		cyclesPanel.removeAll();
 
@@ -180,7 +219,7 @@ public class SwingGUITrafficController extends JFrame {
 		int i = 0;
 		pp.channelPanel.removeAll();
 		for (Map.Entry<Long, ConfigTrafficLight.LightObject> s: pp.phase.getChannels().entrySet()) {
-			ChannelPanel cp = new ChannelPanel(pp.phase, s.getKey(), s.getValue());
+			ChannelPanel cp = new ChannelPanel(pp.phase, s.getKey(), s.getValue(), pp);
 			GridBagConstraints gbc = new GridBagConstraints();
 			gbc.gridx = 0;
 			gbc.gridy = i;
@@ -204,11 +243,6 @@ public class SwingGUITrafficController extends JFrame {
 	 */
 	public class BaseInfoPanel extends JPanel {
 		
-		private JLabel nameLabel = new JLabel("制御機名称(ENTERで反映)");
-		
-		private JTextField nameField = new JTextField(32);
-		
-		private JButton colorButton = new JButton();
 		
 		public BaseInfoPanel() {
 			super();
@@ -218,7 +252,9 @@ public class SwingGUITrafficController extends JFrame {
 			// レイアウトを指定する（行配置を試みるためBoxLayoutにする）
 			this.setLayout(null);
 			
-			// 子要素の編集
+			// 制御機名称
+			JLabel nameLabel = new JLabel("制御機名称(ENTERで反映)");
+			JTextField nameField = new JTextField(32);
 			nameLabel.setBounds(0, 0, this.getWidth(), 20);
 			nameField.setBounds(0, 25, this.getWidth(), 20);
 			nameField.setText(SwingGUITrafficController.this.tc.getName());
@@ -235,6 +271,9 @@ public class SwingGUITrafficController extends JFrame {
 					SwingGUITrafficController.this.setTitle(String.format("制御機名称を変更しました - 制御機「%s」の設定", tc.getName()));
 				}
 			});
+			
+			// 色
+			JButton colorButton = new JButton();
 			colorButton.setBounds(0, 50, this.getWidth(), 20);
 			colorButton.setText(String.format("色 = RGB(%d, %d, %d)", SwingGUITrafficController.this.tc.getColor().getRed(), SwingGUITrafficController.this.tc.getColor().getGreen(), SwingGUITrafficController.this.tc.getColor().getBlue()));
 			colorButton.addActionListener((e) -> {
@@ -247,11 +286,159 @@ public class SwingGUITrafficController extends JFrame {
 				}
 			});
 			
+			// 半径
+			JLabel rangeLabelX = new JLabel("検知半径X(8-16がベスト)");
+			rangeLabelX.setBounds(0, 75, this.getWidth(), 20);
+			JTextField rangeFieldX = new JTextField(32);
+			rangeFieldX.setBounds(0, 100, this.getWidth(), 20);
+			rangeFieldX.setText(String.valueOf(SwingGUITrafficController.this.tc.getDetectRangeX()));
+			rangeFieldX.addKeyListener(new KeyAdapter() {
+				@Override
+				public void keyPressed(KeyEvent e) {
+					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+						try {
+							int range = Integer.parseInt(rangeFieldX.getText());
+							if (range > 32) {
+								// 大きいと検索に時間がかかる為警告を出す
+								int check = JOptionPane.showConfirmDialog(SwingGUITrafficController.this, "推奨範囲を超えていますが設定してもいいですか？（一般に32を超えるとスペックの低いPCではカクカクする場合があります）", "推奨範囲を超えています", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+								if (check == JOptionPane.CANCEL_OPTION || check == JOptionPane.CLOSED_OPTION) {
+									rangeFieldX.setText(String.valueOf(SwingGUITrafficController.this.tc.getDetectRange()));
+									return;
+								}
+							}
+							SwingGUITrafficController.this.tc.setDetectRangeX(range);
+							SwingGUITrafficController.this.setTitle(String.format("検知半径Xを「%d」に設定しました - 制御機「%s」の設定", range, tc.getName()));
+						} catch (NumberFormatException e2) {
+							JOptionPane.showMessageDialog(SwingGUITrafficController.this, "検知半径は0より大きい整数（かつ2147483648より小さい数）で入力する必要があります。", "セットできませんでした", JOptionPane.ERROR_MESSAGE);
+						} catch (IllegalArgumentException e2) {
+							JOptionPane.showMessageDialog(SwingGUITrafficController.this, "セットに失敗しました -> " + e2.getMessage() , "セットできませんでした", JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}
+			});
+			
+			JLabel rangeLabelY = new JLabel("検知半径Y(8-16がベスト)");
+			rangeLabelY.setBounds(0, 125, this.getWidth(), 20);
+			JTextField rangeFieldY = new JTextField(32);
+			rangeFieldY.setBounds(0, 150, this.getWidth(), 20);
+			rangeFieldY.setText(String.valueOf(SwingGUITrafficController.this.tc.getDetectRangeY()));
+			rangeFieldY.addKeyListener(new KeyAdapter() {
+				@Override
+				public void keyPressed(KeyEvent e) {
+					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+						try {
+							int range = Integer.parseInt(rangeFieldY.getText());
+							if (range > 32) {
+								// 大きいと検索に時間がかかる為警告を出す
+								int check = JOptionPane.showConfirmDialog(SwingGUITrafficController.this, "推奨範囲を超えていますが設定してもいいですか？（一般に32を超えるとスペックの低いPCではカクカクする場合があります）", "推奨範囲を超えています", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+								if (check == JOptionPane.CANCEL_OPTION || check == JOptionPane.CLOSED_OPTION) {
+									rangeFieldY.setText(String.valueOf(SwingGUITrafficController.this.tc.getDetectRange()));
+									return;
+								}
+							}
+							SwingGUITrafficController.this.tc.setDetectRangeY(range);
+							SwingGUITrafficController.this.setTitle(String.format("検知半径Yを「%d」に設定しました - 制御機「%s」の設定", range, tc.getName()));
+						} catch (NumberFormatException e2) {
+							JOptionPane.showMessageDialog(SwingGUITrafficController.this, "検知半径は0より大きい整数（かつ2147483648より小さい数）で入力する必要があります。", "セットできませんでした", JOptionPane.ERROR_MESSAGE);
+						} catch (IllegalArgumentException e2) {
+							JOptionPane.showMessageDialog(SwingGUITrafficController.this, "セットに失敗しました -> " + e2.getMessage() , "セットできませんでした", JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}
+			});
+			
+			JLabel rangeLabelZ = new JLabel("検知半径Z(8-16がベスト)");
+			rangeLabelZ.setBounds(0, 175, this.getWidth(), 20);
+			JTextField rangeFieldZ = new JTextField(32);
+			rangeFieldZ.setBounds(0, 200, this.getWidth(), 20);
+			rangeFieldZ.setText(String.valueOf(SwingGUITrafficController.this.tc.getDetectRangeZ()));
+			rangeFieldZ.addKeyListener(new KeyAdapter() {
+				@Override
+				public void keyPressed(KeyEvent e) {
+					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+						try {
+							int range = Integer.parseInt(rangeFieldZ.getText());
+							if (range > 32) {
+								// 大きいと検索に時間がかかる為警告を出す
+								int check = JOptionPane.showConfirmDialog(SwingGUITrafficController.this, "推奨範囲を超えていますが設定してもいいですか？（一般に32を超えるとスペックの低いPCではカクカクする場合があります）", "推奨範囲を超えています", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+								if (check == JOptionPane.CANCEL_OPTION || check == JOptionPane.CLOSED_OPTION) {
+									rangeFieldZ.setText(String.valueOf(SwingGUITrafficController.this.tc.getDetectRange()));
+									return;
+								}
+							}
+							SwingGUITrafficController.this.tc.setDetectRangeZ(range);
+							SwingGUITrafficController.this.setTitle(String.format("検知半径Zを「%d」に設定しました - 制御機「%s」の設定", range, tc.getName()));
+						} catch (NumberFormatException e2) {
+							JOptionPane.showMessageDialog(SwingGUITrafficController.this, "検知半径は0より大きい整数（かつ2147483648より小さい数）で入力する必要があります。", "セットできませんでした", JOptionPane.ERROR_MESSAGE);
+						} catch (IllegalArgumentException e2) {
+							JOptionPane.showMessageDialog(SwingGUITrafficController.this, "セットに失敗しました -> " + e2.getMessage() , "セットできませんでした", JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}
+			});
+			
+			// 制御機の設定を保存するボタン
+			JButton saveButton = new JButton("ファイルに保存");
+			saveButton.setBounds(0, this.getHeight() - 50, this.getWidth(), 20);
+			saveButton.setToolTipText("サイクル、フェーズ、制御機の基本情報をファイルに保存します。");
+			saveButton.addActionListener((e) -> {
+				// どこに保存するか選択させる
+				JFileChooser jfc = new JFileChooser();
+				jfc.setDialogTitle("保存する場所を選択してください");
+				jfc.setAcceptAllFileFilterUsed(false); // 中身JSONだけど拡張子をGTSに変更する。それ以外開かないようにする
+				jfc.setApproveButtonText("ここに保存");
+				jfc.setFileFilter(new FileNameExtensionFilter("制御機設定ファイル（*.gts）", "gts"));
+				jfc.setCurrentDirectory(GTS.GTSModDir);
+				
+				int res = jfc.showOpenDialog(this);
+				if (res == JFileChooser.APPROVE_OPTION) {
+					try {
+						saveController(jfc.getSelectedFile());
+						SwingGUITrafficController.this.setTitle(String.format("設定を保存しました - 制御機「%s」の設定", tc.getName()));
+					} catch (IOException e2) {
+						JOptionPane.showMessageDialog(SwingGUITrafficController.this, "保存に失敗しました -> " + e2.getMessage() , "保存できませんでした", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			});
+			
+			// 制御機の設定を読み込むボタン
+			JButton loadButton = new JButton("ファイルから読み込み");
+			loadButton.setBounds(0, this.getHeight() - 25, this.getWidth(), 20);
+			loadButton.setToolTipText("サイクル、フェーズ、制御機の基本情報をファイルから読み込みます。バージョンが違うとうまく読み込めない場合があります。");
+			loadButton.addActionListener((e) -> {
+				// どこにあるか選択させる
+				JFileChooser jfc = new JFileChooser();
+				jfc.setDialogTitle("読み込む場所を選択してください");
+				jfc.setAcceptAllFileFilterUsed(false); // 中身JSONだけど拡張子をGTSに変更する。それ以外開かないようにする
+				jfc.setApproveButtonText("ここから読み込む");
+				jfc.setFileFilter(new FileNameExtensionFilter("制御機設定ファイル（*.gts）", "gts"));
+				jfc.setCurrentDirectory(GTS.GTSModDir);
+				
+				
+				int res = jfc.showOpenDialog(this);
+				if (res == JFileChooser.APPROVE_OPTION) {
+					try {
+						loadController(jfc.getSelectedFile());
+						SwingGUITrafficController.this.setTitle(String.format("設定を読み込みました - 制御機「%s」の設定", tc.getName()));
+					} catch (Exception e2) {
+						JOptionPane.showMessageDialog(SwingGUITrafficController.this, "読み込みに失敗しました -> " + e2.getMessage() + "\n" + Arrays.toString(e2.getStackTrace()).replace(",", "\n"), "保存できませんでした -> " + e2.getClass(), JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			});
+			
 			
 			// 全部追加
 			this.add(nameLabel);
 			this.add(nameField);
 			this.add(colorButton);
+			this.add(rangeFieldX);
+			this.add(rangeLabelX);
+			this.add(rangeFieldY);
+			this.add(rangeLabelY);
+			this.add(rangeFieldZ);
+			this.add(rangeLabelZ);
+			this.add(saveButton);
+			this.add(loadButton);
 		}
 	}
 	
@@ -260,11 +447,11 @@ public class SwingGUITrafficController extends JFrame {
 	 */
 	public class CyclePanel extends JPanel {
 		
-		private Cycle cycle;
+		private final Cycle cycle;
 		
-		private JPanel phases;
+		private final JPanel phases;
 		
-		private GridBagLayout layout = new GridBagLayout();
+		private final GridBagLayout layout = new GridBagLayout();
 		
 		public CyclePanel(Cycle cycle) {
 			super();
@@ -437,11 +624,11 @@ public class SwingGUITrafficController extends JFrame {
 	
 	public class PhasePanel extends JPanel {
 		
-		private Cycle cycle;
+		private final Cycle cycle;
 		private Phase phase;
 		
-		private GridBagLayout layout = new GridBagLayout();
-		private JPanel channelPanel;
+		private final GridBagLayout layout = new GridBagLayout();
+		private final JPanel channelPanel;
 		
 		public PhasePanel(Cycle cycle, Phase phaseIn) {
 			super();
@@ -632,11 +819,12 @@ public class SwingGUITrafficController extends JFrame {
 	
 	public class ChannelPanel extends JPanel {
 		
-		private Phase phase;
+		private final Phase phase;
 		private ConfigTrafficLight.LightObject lightObject;
 		private long channel;
+		private final PhasePanel phasePanel;
 		
-		public ChannelPanel(Phase p, long key, ConfigTrafficLight.LightObject l) {
+		public ChannelPanel(Phase p, long key, ConfigTrafficLight.LightObject l, PhasePanel pp) {
 			super();
 			setPreferredSize(new Dimension(SwingGUITrafficController.this.width / 4 * 3 - 110, 30));
 			setMinimumSize(new Dimension(SwingGUITrafficController.this.width / 4 * 3 - 110, 30));
@@ -645,17 +833,18 @@ public class SwingGUITrafficController extends JFrame {
 			phase = p;
 			lightObject = l;
 			channel = key;
+			phasePanel = pp;
 			
 			// チャンネル番号
 			JLabel l1 = new JLabel("チャンネル番号");
-			l1.setBounds(0, 0, (SwingGUITrafficController.this.width / 4 * 3 - 110) / 4, 20);
-			l1.setPreferredSize(new Dimension((SwingGUITrafficController.this.width / 4 * 3 - 110) / 4, 20));
+			l1.setBounds(0, 0, (SwingGUITrafficController.this.width / 4 * 3 - 110) / 5, 20);
+			l1.setPreferredSize(new Dimension((SwingGUITrafficController.this.width / 4 * 3 - 110) / 5, 20));
 			add(l1);
 			
 			// のフィールド
 			JTextField t1 = new JTextField();
-			t1.setPreferredSize(new Dimension((SwingGUITrafficController.this.width / 4 * 3 - 110) / 4, 20));
-			t1.setBounds((SwingGUITrafficController.this.width / 4 * 3 - 110) / 4 + 5, 5, (SwingGUITrafficController.this.width / 4 * 3 - 110) / 4, 20);
+			t1.setPreferredSize(new Dimension((SwingGUITrafficController.this.width / 4 * 3 - 110) / 5, 20));
+			t1.setBounds((SwingGUITrafficController.this.width / 4 * 3 - 110) / 5 + 5, 5, (SwingGUITrafficController.this.width / 4 * 3 - 110) / 5, 20);
 			t1.setText(String.valueOf(channel));
 			t1.addKeyListener(new KeyAdapter() {
 				@Override
@@ -685,14 +874,14 @@ public class SwingGUITrafficController extends JFrame {
 			
 			// LightObject名称
 			JLabel l2 = new JLabel("LightObject名称");
-			l2.setBounds((SwingGUITrafficController.this.width / 4 * 3 - 110) / 2 + 5, 0, (SwingGUITrafficController.this.width / 4 * 3 - 110) / 4, 20);
-			l2.setPreferredSize(new Dimension((SwingGUITrafficController.this.width / 4 * 3 - 120) / 4, 20));
+			l2.setBounds((SwingGUITrafficController.this.width / 4 * 3 - 110) / 5 * 2 + 5, 0, (SwingGUITrafficController.this.width / 4 * 3 - 110) / 5, 20);
+			l2.setPreferredSize(new Dimension((SwingGUITrafficController.this.width / 4 * 3 - 120) / 5, 20));
 			add(l2);
 			
 			// のフィールド
 			JTextField t2 = new JTextField();
 			t2.setPreferredSize(new Dimension((SwingGUITrafficController.this.width / 4 * 3 - 120) / 4, 20));
-			t2.setBounds((SwingGUITrafficController.this.width / 4 * 3 - 110) / 4 * 3 + 5, 5, (SwingGUITrafficController.this.width / 4 * 3 - 110) / 4, 20);
+			t2.setBounds((SwingGUITrafficController.this.width / 4 * 3 - 110) / 5 * 3 + 5, 5, (SwingGUITrafficController.this.width / 4 * 3 - 110) / 5, 20);
 			t2.setText(l.getName());
 			t2.addKeyListener(new KeyAdapter() {
 				@Override
@@ -714,7 +903,6 @@ public class SwingGUITrafficController extends JFrame {
 								
 							}
 						}
-						// TODO: 現在は暫定的に最初に見つかったものを取り出しているが選べるようにする
 						if (lightObject.isEmpty()) {
 							// 見つからない
 							JOptionPane.showMessageDialog(SwingGUITrafficController.this, "アタッチしている交通信号機の中にそのような名前のLightObjectは見つかりませんでした。先に信号機を置いてから編集してください。", "LightObjectが見つかりません", JOptionPane.ERROR_MESSAGE);
@@ -728,6 +916,56 @@ public class SwingGUITrafficController extends JFrame {
 			});
 			add(t2);
 			
+			// チャンネル削除ボタン
+			JButton b1 = new JButton("削除");
+			b1.setPreferredSize(new Dimension((SwingGUITrafficController.this.width / 4 * 3 - 110) / 5, 20));
+			b1.setBounds((SwingGUITrafficController.this.width / 4 * 3 - 110) / 5 * 4 + 5, 5, (SwingGUITrafficController.this.width / 4 * 3 - 110) / 5, 20);
+			b1.addActionListener((e) -> {
+				// チャンネルを削除する
+				this.phase.getChannels().remove(channel);
+				refreshChannels(pp);
+				setTitle(String.format("フェーズ「%s」のチャンネル番号「%d」を削除しました - 制御機「%s」の設定", phase.getName(), channel, tc.getName()));
+			});
+			add(b1);
+		}
+	}
+	
+	/**
+	 * 指定されたファイルに制御機情報を保存する。
+	 * 要はバックアップ取れるやつ。
+	 * @param file
+	 * @throws IOException
+	 */
+	public void saveController(File file) throws IOException {
+		try (FileWriter fw = new FileWriter(file)) {
+			fw.append(new GsonBuilder().setPrettyPrinting().setExclusionStrategies(new ExcludeJsonStrategy()).create().toJson(tc));
+		}
+	}
+	
+	/**
+	 * 指定されたファイルから制御機情報を読み込む。
+	 * バックアップからサイクルとフェーズを復元する。
+	 * @param file
+	 * @throws IOException
+	 */
+	public void loadController(File file) throws IOException, IllegalAccessException {
+		try (FileReader fr = new FileReader(file)) {
+			TrafficController tc = new GsonBuilder().setExclusionStrategies(new ExcludeJsonStrategy()).registerTypeAdapter(Phase.class, JSON_DESERIALIZER_PHASE).create().fromJson(fr, TrafficController.class);
+			// 読み込んだ制御機のフィールドを反映させていく（ただし@Excludeがついているフィールドは対象外とする）
+			// フィールド増える可能性があるのでリフレクション
+			Class c = TrafficController.class; // クラスを読み込み
+			for (Field f: c.getDeclaredFields()) {
+				if (f.getAnnotation(Exclude.class) == null) {
+					// このフィールドを指定する
+					f.setAccessible(true); // 問答無用でtrue
+					Class<?> type = f.getType(); // 型の情報を読み込み
+					Object o = f.get(tc); // 一旦内容を読み込み
+					f.set(this.tc, type.cast(o)); // 無理やり入れ込む
+				}
+			}
+			
+			refreshBase(); // 左側のパネル再読み込み
+			refreshCycles(); // サイクル強制再読み込み
 		}
 	}
 }

@@ -2,12 +2,15 @@ package jp.gingarenpo.gts.pole;
 
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.arm.ItemTrafficArm;
+import jp.gingarenpo.gts.core.model.ModelBase;
+import jp.gingarenpo.gts.pole.gui.SwingGUITrafficPole;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -113,6 +116,22 @@ public class BlockTrafficPole extends BlockContainer {
 		if (self == null) return;
 		checkStatus(worldIn, self, pos);
 		
+		// ItemStackの状態を確認する
+		if (!(placer instanceof EntityPlayer)) return;
+		ItemStack is = placer.getHeldItem(EnumHand.MAIN_HAND); // メインハンドに持っているアイテムを取得
+		if (is.getItem() != ItemBlock.getItemFromBlock(GTS.Blocks.pole)) return; // 違う者の場合は無視（あり得ないけど）
+		
+		// ItemStackのモデル名を確認する
+		NBTTagCompound c = is.getTagCompound();
+		if (c == null) return; // 無視
+		String name = c.getString("gts_item_model_pole"); // NBTから取得したパック名
+		ModelBase model = SwingGUITrafficPole.getModelFromChoiceName(name);
+		if (model == null) {
+			GTS.GTSLog.warn("ItemStack declare default model as " + name + ", but it is not found. dummy used.");
+			return;
+		}
+		self.setAddon((ModelTrafficPole) model); // 入れる
+		
 	}
 	
 	/**
@@ -131,9 +150,10 @@ public class BlockTrafficPole extends BlockContainer {
 	@Override
 	public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
 		ItemStack is = playerIn.getHeldItemMainhand(); // 持っているアイテムを取得
-		if (!(is.getItem() instanceof ItemTrafficArm)) return false; // アイテムがアームじゃなかったら無視
-		
 		TileEntityTrafficPole te = (TileEntityTrafficPole) worldIn.getTileEntity(pos); // 絶対にあるはず
+		if (!(is.getItem() instanceof ItemTrafficArm)) {
+			return false;
+		}
 		
 		if (te.isPreConnect()) {
 			// 既に接続中だった場合。ポールからポールには接続不可能なので処理を終了する

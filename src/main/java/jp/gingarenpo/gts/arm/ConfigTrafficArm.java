@@ -1,6 +1,6 @@
 package jp.gingarenpo.gts.arm;
 
-import jp.gingarenpo.gts.core.ConfigBase;
+import jp.gingarenpo.gts.core.config.ConfigBase;
 
 import java.awt.image.BufferedImage;
 import java.io.Serializable;

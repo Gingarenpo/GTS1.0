@@ -1,8 +1,7 @@
 package jp.gingarenpo.gts.pack;
 
 
-import jp.gingarenpo.gts.core.ModelBase;
-import jp.gingarenpo.gts.light.ModelTrafficLight;
+import jp.gingarenpo.gts.core.model.ModelBase;
 
 import java.io.File;
 import java.util.ArrayList;

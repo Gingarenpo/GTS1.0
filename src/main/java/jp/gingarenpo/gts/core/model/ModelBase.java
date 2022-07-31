@@ -1,7 +1,8 @@
-package jp.gingarenpo.gts.core;
+package jp.gingarenpo.gts.core.model;
 
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
+import jp.gingarenpo.gts.core.config.ConfigBase;
 
 import java.io.File;
 import java.io.Serializable;
@@ -72,7 +73,7 @@ public abstract class ModelBase<T extends ConfigBase> implements Serializable {
 	 */
 	public boolean equals(ModelBase o) {
 		// System.out.printf("%s = %s%n", o.config.id, this.config.id);
-		return (Objects.equals(o.config.id, this.config.id));
+		return (Objects.equals(o.config.getId(), this.config.getId()));
 	}
 	
 	/**
@@ -100,4 +101,9 @@ public abstract class ModelBase<T extends ConfigBase> implements Serializable {
 					   ", file=" + file +
 					   '}';
 	}
+	
+	/**
+	 * テクスチャを再読み込みしてバインドできる状態にする
+	 */
+	public abstract void reloadTexture();
 }

@@ -1,13 +1,16 @@
 package jp.gingarenpo.gts;
 
 import jp.gingarenpo.gts.arm.ItemTrafficArm;
+import jp.gingarenpo.gts.arm.gui.SwingGUITrafficArm;
 import jp.gingarenpo.gts.button.BlockTrafficButton;
 import jp.gingarenpo.gts.button.PacketTrafficButton;
 import jp.gingarenpo.gts.button.TileEntityTrafficButton;
+import jp.gingarenpo.gts.button.gui.SwingGUITrafficButton;
 import jp.gingarenpo.gts.controller.BlockTrafficController;
 import jp.gingarenpo.gts.controller.PacketTrafficController;
 import jp.gingarenpo.gts.controller.TileEntityTrafficController;
-import jp.gingarenpo.gts.core.GTSGUIHandler;
+import jp.gingarenpo.gts.core.gui.GTSGUIHandler;
+import jp.gingarenpo.gts.core.network.PacketItemStack;
 import jp.gingarenpo.gts.event.GTSWorldEvent;
 import jp.gingarenpo.gts.light.BlockTrafficLight;
 import jp.gingarenpo.gts.light.PacketTrafficLight;
@@ -17,17 +20,23 @@ import jp.gingarenpo.gts.pack.Loader;
 import jp.gingarenpo.gts.pole.BlockTrafficPole;
 import jp.gingarenpo.gts.pole.PacketTrafficPole;
 import jp.gingarenpo.gts.pole.TileEntityTrafficPole;
+import jp.gingarenpo.gts.pole.gui.SwingGUITrafficPole;
 import jp.gingarenpo.gts.proxy.GTSProxy;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumHand;
+import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
@@ -45,6 +54,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 
@@ -149,6 +160,9 @@ public class GTS {
 		// パケットの登録
 		GTSPacket.init();
 		
+		// パックを登録する
+		loader = new Loader();
+		loader.load(GTSModDir); // 検索をかける
 		
 	}
 	
@@ -158,6 +172,8 @@ public class GTS {
 	 */
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent event) {
+		// MinecraftにGTSのパックからリソースを読み込めるように指示する
+		proxy.registerResourcePackLoader();
 	}
 	
 	/**
@@ -166,9 +182,7 @@ public class GTS {
 	 */
 	@Mod.EventHandler
 	public void postInit(FMLPostInitializationEvent event) throws IOException {
-		// パックを登録する
-		loader = new Loader();
-		loader.load(GTSModDir); // 検索をかける
+	
 	}
 	
 	/**
@@ -185,6 +199,7 @@ public class GTS {
 		public static final BlockTrafficPole pole = null; // ポール
 		public static final BlockTrafficButton button = null; // 押ボタン箱
 	}
+	
 	
 	/**
 	 * Forge will automatically look up and bind items to the fields in this class
@@ -244,6 +259,113 @@ public class GTS {
 					new BlockTrafficButton()
 			); // ブロックを実際に登録
 		}
+		
+		/**
+		 * プレイヤーが何もないところを右クリック（設置）したときに呼び出されるイベント。
+		 * クライアント側で呼び出されるのでなんかあればサーバーにパケットを送らねばならない
+		 *
+		 * @param event
+		 */
+		@SubscribeEvent
+		public static void onPlayerClick(PlayerInteractEvent.RightClickItem event) {
+			if (event.getSide().isServer()) return; // サーバー側では実行されないはずだけど
+			if (event.getHand() == EnumHand.OFF_HAND) return; // 左手は無視
+			ItemStack is = event.getItemStack(); // 持っているアイテムを取得
+			if (is.getItem() == ItemBlock.getItemFromBlock(Blocks.pole)) {
+				// ポールを持った状態でクリックした
+				NBTTagCompound compound = is.getTagCompound(); // 取得
+				if (compound == null) {
+					compound = new NBTTagCompound(); // 新たにNBTタグを作成
+					// モデルのパック名を入れる（getなんとかnameで取れるやつ）
+					compound.setString("gts_item_model_pole", ""); // 空文字を入れることでダミーモデルだと判断させる
+					is.setTagCompound(compound);
+				}
+				
+				
+				// ポールのモデル更新ウィンドウを開く
+				if (GTS.window != null) return; // 二重に開かない
+				EntityPlayer player = event.getEntityPlayer();
+				World world = event.getWorld();
+				player.openGui(GTS.INSTANCE, 1, world, player.getPosition().getX(), player.getPosition().getY(), player.getPosition().getZ());
+				GTS.window = new SwingGUITrafficPole(is);
+				GTS.window.setVisible(true);
+				GTS.window.addWindowListener(new WindowAdapter() {
+					
+					@Override
+					public void windowClosed(WindowEvent e) {
+						player.closeScreen();
+						GTS.window = null; // 元に戻す
+						
+						// サーバーにパケットを送信する
+						GTS.MOD_NETWORK.sendToServer(new PacketItemStack(is.getTagCompound(), player.getName()));
+					}
+				});
+				return;
+			}
+			else if (is.getItem() == Items.arm) {
+				// アームを持った状態でクリックした
+				NBTTagCompound compound = is.getTagCompound(); // 取得
+				if (compound == null) {
+					compound = new NBTTagCompound(); // 新たにNBTタグを作成
+					// モデルのパック名を入れる（getなんとかnameで取れるやつ）
+					compound.setString("gts_item_model_arm", ""); // 空文字を入れることでダミーモデルだと判断させる
+					is.setTagCompound(compound);
+				}
+				
+				
+				// ポールのモデル更新ウィンドウを開く
+				if (GTS.window != null) return; // 二重に開かない
+				EntityPlayer player = event.getEntityPlayer();
+				World world = event.getWorld();
+				player.openGui(GTS.INSTANCE, 1, world, player.getPosition().getX(), player.getPosition().getY(), player.getPosition().getZ());
+				GTS.window = new SwingGUITrafficArm(is);
+				GTS.window.setVisible(true);
+				GTS.window.addWindowListener(new WindowAdapter() {
+					
+					@Override
+					public void windowClosed(WindowEvent e) {
+						player.closeScreen();
+						GTS.window = null; // 元に戻す
+						
+						// サーバーにパケットを送信する
+						GTS.MOD_NETWORK.sendToServer(new PacketItemStack(is.getTagCompound(), player.getName()));
+					}
+				});
+				return;
+			}
+			else if (is.getItem() == ItemBlock.getItemFromBlock(Blocks.button)) {
+				// 押ボタン箱を持った状態でクリックした
+				NBTTagCompound compound = is.getTagCompound(); // 取得
+				if (compound == null) {
+					compound = new NBTTagCompound(); // 新たにNBTタグを作成
+					// モデルのパック名を入れる（getなんとかnameで取れるやつ）
+					compound.setString("gts_item_model_button", ""); // 空文字を入れることでダミーモデルだと判断させる
+					is.setTagCompound(compound);
+				}
+				
+				
+				// ポールのモデル更新ウィンドウを開く
+				if (GTS.window != null) return; // 二重に開かない
+				EntityPlayer player = event.getEntityPlayer();
+				World world = event.getWorld();
+				player.openGui(GTS.INSTANCE, 1, world, player.getPosition().getX(), player.getPosition().getY(), player.getPosition().getZ());
+				GTS.window = new SwingGUITrafficButton(is);
+				GTS.window.setVisible(true);
+				GTS.window.addWindowListener(new WindowAdapter() {
+					
+					@Override
+					public void windowClosed(WindowEvent e) {
+						player.closeScreen();
+						GTS.window = null; // 元に戻す
+						
+						// サーバーにパケットを送信する
+						GTS.MOD_NETWORK.sendToServer(new PacketItemStack(is.getTagCompound(), player.getName()));
+					}
+				});
+				return;
+			}
+		}
+		
 	
 		
 		
@@ -257,6 +379,7 @@ public class GTS {
 			proxy.registerItemModels(); // ここでモデルの登録を行わないといけない
 		}
 		
+		
 	}
 	
 	public static class GTSPacket {
@@ -269,6 +392,9 @@ public class GTS {
 			GTSPacket.registerPacket(PacketTrafficLight.class, PacketTrafficLight.class, Side.SERVER);
 			GTSPacket.registerPacket(PacketTrafficPole.class, PacketTrafficPole.class, Side.SERVER);
 			GTSPacket.registerPacket(PacketTrafficButton.class, PacketTrafficButton.class, Side.SERVER);
+			
+			// モデル更新を伝えるためのパケット
+			GTSPacket.registerPacket(PacketItemStack.class, PacketItemStack.class, Side.SERVER);
 		}
 		
 		/**

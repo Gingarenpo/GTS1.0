@@ -1,7 +1,8 @@
 package jp.gingarenpo.gts.light;
 
 
-import jp.gingarenpo.gts.core.ConfigBase;
+import jp.gingarenpo.gts.core.config.ConfigBase;
+import jp.gingarenpo.gts.core.json.Exclude;
 
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
@@ -221,6 +222,7 @@ public class ConfigTrafficLight extends ConfigBase implements Serializable {
 		private int tick = 0; // 点滅周期。Tickで指定する。指定がない場合や0の場合は点滅を行わない
 		private ArrayList<String> objects; // その現示の際に光らせるオブジェクト名を指定する。配列で指定すると全部光るようになる。
 		
+		@Exclude
 		private static final long serialVersionUID = 1L;
 		
 		public LightObject() {

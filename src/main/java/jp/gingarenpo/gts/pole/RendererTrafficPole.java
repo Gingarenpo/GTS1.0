@@ -8,49 +8,41 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * ポールのレンダリングを行う。
  */
 public class RendererTrafficPole extends TileEntitySpecialRenderer<TileEntityTrafficPole> {
 	
+	private HashMap<String, ResourceLocation> textures = new HashMap<>();
+	
 	@Override
 	public void render(TileEntityTrafficPole te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
 		super.render(te, x, y, z, partialTicks, destroyStage, alpha);
 		
+		if (te.getAddon() == null) return;
 		
-		
-		if (te.getTexture() == null) {
-			// ロケーションを新たに作るが
+		if (!textures.containsKey(te.getAddon().getConfig().getTexture())) {
+			// テクスチャないので作成する
 			if (te.getAddon().getConfig().getTexImage() == null) {
-				// テクスチャが存在しない場合は再読み込みが必要
-				if (te.getPackLocation() == null) {
-					// ダミーなのでもう新たに割り当てる
+				// テクスチャがないのでリロードする
+				te.getAddon().reloadTexture();
+				if (te.getAddon().getConfig().getTexImage() == null) {
 					te.setDummyModel();
 					return;
 				}
-				
-				// ダミーモデルでない場合はLoaderから探す
-				BufferedImage tex = GTS.loader.getTexture(te.getPackLocation(), te.getAddon().getConfig().getTexture());
-				if (tex != null) {
-					te.getAddon().getConfig().setTexImage(tex);
-				}
-				else {
-					// 存在しないパックなのでダミーに差し替え
-					te.setDummyModel();
-					GTS.GTSLog.warn("Warning. Pole model missing.");
-				}
-				
 			}
-			te.setTexture(Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("tp_" + te.getAddon().getConfig().getId(), new DynamicTexture(te.getAddon().getConfig().getTexImage())));
+			textures.put(te.getAddon().getConfig().getTexture(), Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(te.getAddon().getConfig().getId(), new DynamicTexture(te.getAddon().getConfig().getTexImage())));
 		}
 		
-		this.bindTexture(te.getTexture());
+		this.bindTexture(textures.get(te.getAddon().getConfig().getTexture()));
 		
 		ArrayList<String> objects = te.isTop() ? te.getAddon().getConfig().getTopObject() : (te.isBottom() ? te.getAddon().getConfig().getBottomObject() : te.getAddon().getConfig().getBaseObject());
 		
@@ -109,7 +101,7 @@ public class RendererTrafficPole extends TileEntitySpecialRenderer<TileEntityTra
 				
 				// 中間地点の描画
 				t.getBuffer().begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_COLOR);
-				for (MQOObject o: te.getArm().getAddon().getModel().rescale(0, 0, 0, distance - 1, 1, 1).getObjects4Loop()) {
+				for (MQOObject o: te.getArm().getAddon().getModel().rescale(0, 0, 0, (distance - 1) / te.getArm().getAddon().getConfig().getSize(), 1, 1).getObjects4Loop()) {
 					if (te.getArm().getAddon().getConfig().getStartObject().contains(o.getName())) {
 						continue;
 					}

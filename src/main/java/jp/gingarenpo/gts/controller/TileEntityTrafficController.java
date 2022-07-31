@@ -2,6 +2,7 @@ package jp.gingarenpo.gts.controller;
 
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
+import jp.gingarenpo.gts.button.TileEntityTrafficButton;
 import jp.gingarenpo.gts.core.GTSTileEntity;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import net.minecraft.client.Minecraft;
@@ -24,7 +25,9 @@ import java.util.ArrayList;
  * 交通信号制御機に関するTileEntity。制御機は送信側となるため、受信時の処理は基本的にない。
  * ただし、感知しているかどうかに関する受信のみは行う。
  */
-public class TileEntityTrafficController extends GTSTileEntity implements ITickable {
+public class TileEntityTrafficController extends GTSTileEntity implements ITickable, Serializable {
+	
+	private static final long serialVersionUID = 1L;
 	
 	// 定数
 	private static final int TEXTURE_WIDTH = 256;
@@ -54,23 +57,29 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 	}
 	
 	/**
-	 * 制御機の周りの信号機を再検出し、それをアタッチしてリストに格納する。
+	 * 制御機の周りの機械類を再検出し、それをアタッチしてリストに格納する。
 	 * 非常に重い処理の為、何度も呼び出さないこと。何かをトリガーにして発動させる。
 	 */
 	public void search() {
-		// デフォでコンフィグに入ったrangeの範囲の制御機を読み込んでリストに格納する
 		// ごり押しだけど仕方がない
 		ArrayList<TileEntityTrafficLight> list = new ArrayList<TileEntityTrafficLight>();
-		for (int x = this.pos.getX() - GTS.GTSConfig.detectRange; x < this.pos.getX() + GTS.GTSConfig.detectRange; x++) {
-			for (int y = this.pos.getY() - GTS.GTSConfig.detectRange; y < this.pos.getY() + GTS.GTSConfig.detectRange; y++) {
-				for (int z = this.pos.getZ() - GTS.GTSConfig.detectRange; z < this.pos.getZ() + GTS.GTSConfig.detectRange; z++) {
+		ArrayList<TileEntityTrafficButton> list2 = new ArrayList<TileEntityTrafficButton>();
+		for (int x = this.pos.getX() - data.getDetectRangeX(); x < this.pos.getX() + data.getDetectRangeX(); x++) {
+			for (int y = this.pos.getY() - data.getDetectRangeY(); y < this.pos.getY() + data.getDetectRangeY(); y++) {
+				for (int z = this.pos.getZ() - data.getDetectRangeZ(); z < this.pos.getZ() + data.getDetectRangeZ(); z++) {
 					TileEntity te = world.getTileEntity(new BlockPos(x, y, z)); // TileEntityを取得
-					if (!(te instanceof TileEntityTrafficLight)) continue;
-					list.add((TileEntityTrafficLight) te);
+					if (te instanceof TileEntityTrafficLight) {
+						list.add((TileEntityTrafficLight) te);
+					}
+					else if (te instanceof TileEntityTrafficButton) {
+						list2.add((TileEntityTrafficButton) te);
+					}
+					
 				}
 			}
 		}
 		this.getData().setTrafficLights(list); // 見つかったリストに置き換え
+		this.getData().setTrafficButtons(list2); // 見つかったリストに置き換え
 	}
 	
 	/**
@@ -98,8 +107,25 @@ public class TileEntityTrafficController extends GTSTileEntity implements ITicka
 		if (this.world.isRemote) return; // クライアント側では実行しない
 		boolean cycleChange = data.checkCycle(this.world); // 制御機のデータを更新する
 		if (!cycleChange) {
+			this.search(); // サイクル変わるたびに再読み込みする
 			// world.notifyBlockUpdate(this.pos, world.getBlockState(pos), world.getBlockState(pos), 2); // なんかなくても動く
-			// this.search(); // サイクル変わったら再読み込みするのは重いので止める
+			
+		}
+		
+		if (!data.isDetected() && data.getTrafficButtons().size() > 0) {
+			// 検知信号を受信しておらず、ボタンが1つ以上ある場合はそれらのボタンが押されているか確認する
+			boolean push = false; // フラグ
+			for (TileEntityTrafficButton te: data.getTrafficButtons()) {
+				if (te.getButton().isPushed()) {
+					// 押されていた場合
+					push = true;
+					data.setDetected(true); // 検知信号をオンにする
+				}
+				else if (push) {
+					// どれか1つが押されていた場合は残り全部押す（音は鳴らさない）
+					te.getButton().push();
+				}
+			}
 		}
 	}
 	

@@ -1,6 +1,9 @@
 package jp.gingarenpo.gts.controller;
 
+import jp.gingarenpo.gts.GTS;
+import jp.gingarenpo.gts.button.TileEntityTrafficButton;
 import jp.gingarenpo.gts.controller.cycle.Cycle;
+import jp.gingarenpo.gts.core.json.Exclude;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -24,6 +27,9 @@ import java.util.Map;
  */
 public class TrafficController implements Serializable {
 	
+	@Exclude
+	private static final long serialVersionUID = 1L;
+	
 	/**
 	 * この制御機に登録されているサイクルを格納する。キーはサイクル名とし、ハッシュマップで格納する。順番は問わない（つもり）。
 	 */
@@ -44,34 +50,55 @@ public class TrafficController implements Serializable {
 	 * 制御機のテクスチャを保持しておく場所。このインスタンス自体ではGetterとSetterしか提供せず、
 	 * Render側でこの入れ物を適宜使用していくことにする。
 	 */
+	@Exclude
 	private BufferedImage texture;
 	
 	/**
 	 * 検知信号を受信したかどうかを格納する変数。感知器や押ボタン箱の動作によってこの値が変化する。
 	 * サイクルを開始する条件の一つとして利用される。
 	 */
+	@Exclude
 	private boolean detected = false; // 初期値はfalse
 	
 	/**
 	 * 検知ティック。検知信号がtrueになった瞬間を0とし、そこからの経過Tickを格納する。longとする。
 	 */
+	@Exclude
 	private long detectedTick = 0;
+	
+	/**
+	 * この制御機が他の信号機や押ボタン、感知器などを検知する範囲。デフォルトは8。XYZの順番に格納している
+	 */
+	private int[] detectRange = new int[3];
+	
 	
 	/**
 	 * あるサイクルが動作を開始した際を0とし、そこからの経過Tickを格納する。基本的にスピリットとオフセットを決めるために使用する。
 	 */
+	@Exclude
 	private long ticks = 0;
 	
 	/**
 	 * 現在起動しているサイクルの名前が入る。サイクルが何一つ起動していない場合はnullが格納される。
 	 * 内部で使用しているだけなのでこの中身を取得するGetterなどは存在しない。
 	 */
+	@Exclude
 	private String now;
 	
 	/**
 	 * この制御機が制御すべき信号機のTileEntityを格納しておくインスタンス
 	 */
+	@Exclude
 	private ArrayList<TileEntityTrafficLight> trafficLights = new ArrayList<TileEntityTrafficLight>();
+	
+	
+	/**
+	 * この制御機にアタッチするすべてのボタンのTileEntityを格納しておくインスタンス
+	 */
+	@Exclude
+	private ArrayList<TileEntityTrafficButton> trafficButtons = new ArrayList<>();
+	
+	
 	
 	/**
 	 * 交通信号制御機を初期化する。名前が必須案件だが省略して生成するとランダムで32文字のIDが渡される。適宜変更すること。
@@ -79,7 +106,7 @@ public class TrafficController implements Serializable {
 	 */
 	public TrafficController() {
 		this(new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime()) + RandomStringUtils.randomAlphanumeric(24));
-		
+		this.detectRange = new int[] {8, 8, 8};
 	}
 	
 	/**
@@ -107,6 +134,22 @@ public class TrafficController implements Serializable {
 	}
 	
 	/**
+	 * アタッチしているボタンの一覧を返す。
+	 * @return アタッチしているボタン
+	 */
+	public ArrayList<TileEntityTrafficButton> getTrafficButtons() {
+		return trafficButtons;
+	}
+	
+	/**
+	 * ボタン一覧を一括で更新する。
+	 * @param trafficButtons 更新するボタンリスト。
+	 */
+	public void setTrafficButtons(ArrayList<TileEntityTrafficButton> trafficButtons) {
+		this.trafficButtons = trafficButtons;
+	}
+	
+	/**
 	 * 信号機一覧を一括で更新する。
 	 * @param trafficLights 新たな信号機リスト。
 	 */
@@ -121,6 +164,8 @@ public class TrafficController implements Serializable {
 	public void setCycles(LinkedHashMap<String, Cycle> cycles) {
 		this.cycles = cycles;
 	}
+	
+	
 	
 	/**
 	 * 現在起動しているサイクルの情報を返す。
@@ -232,6 +277,76 @@ public class TrafficController implements Serializable {
 	}
 	
 	/**
+	 * 他機器の検知範囲を返す。
+	 * @return 検知範囲の半径
+	 */
+	public int[] getDetectRange() {
+		return detectRange;
+	}
+	
+	/**
+	 * 検知範囲のX範囲を返す。
+	 * @return
+	 */
+	public int getDetectRangeX() {
+		return detectRange[0];
+	}
+	
+	/**
+	 * 検知範囲のY範囲を返す。
+	 * @return
+	 */
+	public int getDetectRangeY() {
+		return detectRange[1];
+	}
+	
+	/**
+	 * 検知範囲のZ範囲を返す。
+	 * @return
+	 */
+	public int getDetectRangeZ() {
+		return detectRange[2];
+	}
+	
+	/**
+	 * 検知範囲のX範囲をセットする。
+	 * @param range
+	 */
+	public void setDetectRangeX(int range) {
+		if (range < 1) throw new IllegalArgumentException("detectRange must be greater than 0");
+		this.detectRange[0] = range;
+	}
+	
+	/**
+	 * 検知範囲のY範囲をセットする。
+	 * @param range
+	 */
+	public void setDetectRangeY(int range) {
+		if (range < 1) throw new IllegalArgumentException("detectRange must be greater than 0");
+		this.detectRange[1] = range;
+	}
+	
+	/**
+	 * 検知範囲のZ範囲をセットする。
+	 * @param range
+	 */
+	public void setDetectRangeZ(int range) {
+		if (range < 1) throw new IllegalArgumentException("detectRange must be greater than 0");
+		this.detectRange[2] = range;
+	}
+	
+	/**
+	 * 他機器の検知範囲を設定する。負の数を引数に入れると例外を発生させる。
+	 * @param detectRange 検知範囲の半径。1以上の値を設定する。
+	 *
+	 * @throws IllegalArgumentException 検知半径に負の値、あるいは0を入れた場合
+	 */
+	public void setDetectRange(int[] detectRange) {
+		if (detectRange[0] < 1 || detectRange[1] < 1 || detectRange[2] < 1) throw new IllegalArgumentException("detectRange must be greater than 0");
+		this.detectRange = detectRange;
+	}
+	
+	/**
 	 * 外部から呼び出されることを前提としている。Tickableを実装したクラス（デフォルトではTileEntity）から呼び出されることを想定。
 	 * 外部からWorldインスタンスを受け取り、サイクルの起動チェックと終了チェックを行う。
 	 * サイクルが維持された場合はtrue、サイクルが変更された場合はfalseを返す
@@ -241,16 +356,26 @@ public class TrafficController implements Serializable {
 	public boolean checkCycle(World world) {
 		if (now != null) {
 			// 現在サイクルが起動している場合、まず終了条件を確かめる
-			if (!getNowCycle().isLast() && !getNowCycle().nextPhase(this, world) || getNowCycle().isLast() && !getNowCycle().resetPhase(this, world)) {
+			if (!getNowCycle().isLast() || (getNowCycle().isLast() && !getNowCycle().resetPhase(this, world))) {
 				// サイクルを終了できない場合（まだこのサイクルが起動中である場合）
 				// GTS.GTSLog.debug(String.format("<%s> Cycle %s needs to continue. Skipped", name, now));
 				this.ticks++;
 				
+				if (!getNowCycle().isLast()) {
+					getNowCycle().nextPhase(this, world); // 次のフェーズへ
+				}
+				
 				return true; // 処理を中止する
 			}
 			// サイクルの終了が確認でき、上記メソッドでサイクルのリセットを行ったため起動サイクル状態を初期化
-			//GTS.GTSLog.debug(String.format("<%s> Cycle %s ended", name, now));
+			GTS.GTSLog.debug(String.format("<%s> Cycle %s ended", name, now));
 			now = null;
+			// サイクル終了したためdetectedを元に戻し、ボタンの状態をリセットする
+			detected = false;
+			for (TileEntityTrafficButton te: trafficButtons) {
+				te.getButton().reset();
+				world.notifyBlockUpdate(te.getPos(), world.getBlockState(te.getPos()), world.getBlockState(te.getPos()), 3);
+			}
 			
 		}
 		
@@ -268,8 +393,21 @@ public class TrafficController implements Serializable {
 		return false;
 	}
 	
-
 	
-	
-
+	@Override
+	public String toString() {
+		return "TrafficController{" +
+					   "cycles=" + cycles +
+					   ", name='" + name + '\'' +
+					   ", color=" + color +
+					   ", texture=" + texture +
+					   ", detected=" + detected +
+					   ", detectedTick=" + detectedTick +
+					   ", detectRange=" + detectRange +
+					   ", ticks=" + ticks +
+					   ", now='" + now + '\'' +
+					   ", trafficLights=" + trafficLights +
+					   ", trafficButtons=" + trafficButtons +
+					   '}';
+	}
 }

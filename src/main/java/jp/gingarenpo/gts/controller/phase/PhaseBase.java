@@ -3,11 +3,13 @@ package jp.gingarenpo.gts.controller.phase;
 import jp.gingarenpo.gts.controller.TrafficController;
 import net.minecraft.world.World;
 
+import java.io.Serializable;
+
 /**
  * GUIで指定することができるベースクラス。フェーズの基礎中の基礎で、
  * 指定したチャンネルに対して一定の信号を一定時間送信するだけのものとなる。
  */
-public class PhaseBase extends Phase {
+public class PhaseBase extends Phase implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	

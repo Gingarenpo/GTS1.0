@@ -10,8 +10,11 @@ import java.util.ArrayList;
 
 public class DummyConfigTrafficPole extends ConfigTrafficPole {
 	
+	private static final long serialVersionUID = 1L;
+	
 	public DummyConfigTrafficPole() throws IOException {
 		this.setId("dummy");
+		this.setTexture("textures/models/dummy_tp.png");
 		this.setTexImage(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tp.png")).getInputStream()));
 		ArrayList<String> s = new ArrayList<>();
 		s.add("base");

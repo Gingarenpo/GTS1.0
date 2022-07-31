@@ -2,7 +2,7 @@ package jp.gingarenpo.gts.light;
 
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
-import jp.gingarenpo.gts.core.ModelBase;
+import jp.gingarenpo.gts.core.model.ModelBase;
 import jp.gingarenpo.gts.pack.Pack;
 
 import java.io.File;

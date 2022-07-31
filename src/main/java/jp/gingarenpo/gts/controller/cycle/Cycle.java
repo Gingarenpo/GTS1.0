@@ -2,6 +2,7 @@ package jp.gingarenpo.gts.controller.cycle;
 
 import jp.gingarenpo.gts.controller.TrafficController;
 import jp.gingarenpo.gts.controller.phase.Phase;
+import jp.gingarenpo.gts.core.json.Exclude;
 import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import net.minecraft.world.World;
@@ -19,6 +20,7 @@ import java.util.Calendar;
  */
 public class Cycle implements Serializable {
 	
+	@Exclude
 	private static final long serialVersionUID = 1L;
 	
 	/**
@@ -247,6 +249,5 @@ public class Cycle implements Serializable {
 		nextPhase(controller, world);
 		return true;
 	}
-	
-	
+
 }

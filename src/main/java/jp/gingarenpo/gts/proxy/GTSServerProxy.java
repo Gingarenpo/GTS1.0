@@ -14,4 +14,9 @@ public class GTSServerProxy extends GTSProxy {
 	public void registerTESRs() {
 		// 以下略
 	}
+	
+	@Override
+	public void registerResourcePackLoader() {
+		//
+	}
 }

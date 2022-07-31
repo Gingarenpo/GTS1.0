@@ -1,4 +1,4 @@
-package jp.gingarenpo.gts.core;
+package jp.gingarenpo.gts.core.script;
 
 /**
  * 簡易的なスクリプト解析エンジン。オリジナルで定義したカスタムスクリプト文法をコンパイルし、

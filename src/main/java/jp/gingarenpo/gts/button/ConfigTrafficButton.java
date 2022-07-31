@@ -1,6 +1,6 @@
 package jp.gingarenpo.gts.button;
 
-import jp.gingarenpo.gts.core.ConfigBase;
+import jp.gingarenpo.gts.core.config.ConfigBase;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -12,9 +12,9 @@ import java.util.ArrayList;
 public class ConfigTrafficButton extends ConfigBase {
 	
 	/**
-	 * 音源ファイルが置かれている場所。ogg推奨。
+	 * 音源ファイルが置かれている場所。oggで指定。デフォルトではGTS組込のやつを用意。
 	 */
-	private String soundPath;
+	private String soundPath = "sounds/push_detect.ogg";
 	
 	/**
 	 * この押ボタン箱のテクスチャ。「押される前」と「押された後」のテクスチャを順番に指定する。

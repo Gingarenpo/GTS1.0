@@ -1,5 +1,7 @@
 package jp.gingarenpo.gts.button;
 
+import jp.gingarenpo.gts.GTS;
+
 import java.io.Serializable;
 
 /**
@@ -24,6 +26,7 @@ public class TrafficButton implements Serializable {
 	 */
 	public void push() {
 		this.push = true;
+		GTS.GTSLog.debug("Pushed.");
 	}
 	
 	/**

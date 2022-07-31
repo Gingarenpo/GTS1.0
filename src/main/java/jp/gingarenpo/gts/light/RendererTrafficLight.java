@@ -216,7 +216,7 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 		// 生成に失敗した場合はそもそもreloadTextureでエラーが出るのでもう返しちゃう
 		if (te.getAddon().getConfig().getTextures().getBaseTex() == null || te.getAddon().getConfig().getTextures().getLightTex() == null || te.getAddon().getConfig().getTextures().getNoLightTex() == null) {
 			GTS.GTSLog.warn("Warning. dynamic texture is null.");
-			return null;
+			te.setDummyModel();
 		}
 		
 		// テクスチャの取得を試みる

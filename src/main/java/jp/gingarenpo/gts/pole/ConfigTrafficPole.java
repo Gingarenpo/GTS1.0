@@ -1,6 +1,6 @@
 package jp.gingarenpo.gts.pole;
 
-import jp.gingarenpo.gts.core.ConfigBase;
+import jp.gingarenpo.gts.core.config.ConfigBase;
 
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
@@ -13,6 +13,8 @@ import java.util.ArrayList;
  * 流用OK。配列で格納される。
  */
 public class ConfigTrafficPole extends ConfigBase implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
 	
 	/**
 	 * テクスチャの場所。
@@ -79,5 +81,19 @@ public class ConfigTrafficPole extends ConfigBase implements Serializable {
 	
 	public void setTopObject(ArrayList<String> topObject) {
 		this.topObject = topObject;
+	}
+	
+	@Override
+	public String toString() {
+		return "ConfigTrafficPole{" +
+					   "id='" + id + '\'' +
+					   ", model='" + model + '\'' +
+					   ", size=" + size +
+					   ", texture='" + texture + '\'' +
+					   ", texImage=" + texImage +
+					   ", baseObject=" + baseObject +
+					   ", bottomObject=" + bottomObject +
+					   ", topObject=" + topObject +
+					   '}';
 	}
 }

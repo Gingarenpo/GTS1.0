@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
+import net.minecraft.util.ITickable;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import org.apache.logging.log4j.Level;
@@ -21,7 +22,7 @@ import java.io.*;
  *
  * 現在はポールのモデルのみを格納する。
  */
-public class TileEntityTrafficPole extends GTSTileEntity {
+public class TileEntityTrafficPole extends GTSTileEntity implements ITickable {
 	
 	/**
 	 * ポールのアドオンクラス。
@@ -321,5 +322,14 @@ public class TileEntityTrafficPole extends GTSTileEntity {
 	
 	public boolean isPreConnect() {
 		return this.preConnect;
+	}
+	
+	@Override
+	public void update() {
+		if (this.addon == null) return;
+		if (this.addon.isNeedChangeTex()) {
+			world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+			this.addon.doneChangeTex();
+		}
 	}
 }

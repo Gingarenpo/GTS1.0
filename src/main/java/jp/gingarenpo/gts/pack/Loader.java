@@ -1,13 +1,16 @@
 package jp.gingarenpo.gts.pack;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
+import jp.gingarenpo.gts.arm.ConfigTrafficArm;
 import jp.gingarenpo.gts.button.ConfigTrafficButton;
 import jp.gingarenpo.gts.button.ModelTrafficButton;
-import jp.gingarenpo.gts.core.ConfigBase;
-import jp.gingarenpo.gts.core.ModelBase;
+import jp.gingarenpo.gts.core.config.ConfigBase;
+import jp.gingarenpo.gts.core.model.ModelBase;
 import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.light.ModelTrafficLight;
 import jp.gingarenpo.gts.pole.ConfigTrafficPole;
@@ -19,9 +22,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Properties;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -35,6 +36,11 @@ public class Loader {
 	
 	private HashMap<File, Pack> packs = new HashMap<>(); // パックの存在場所を示すもの。必ず存在する（ゲーム開始時点では）
 	private HashMap<File, HashMap<String, BufferedImage>> textures = new HashMap<>(); // テクスチャの存在を示すもの
+	private HashMap<File, HashMap<String, byte[]>> sounds = new HashMap<>(); // サウンドのバイナリ自体を格納しておくところ
+	
+	private GTSSoundJson soundJson = new GTSSoundJson(); // JSON作成用
+	private String soundJsonString; // inputStream用
+	
 	private boolean completeLoad = false;
 	
 	public Loader() {
@@ -55,6 +61,23 @@ public class Loader {
 	 */
 	public HashMap<File, HashMap<String, BufferedImage>> getTextures() {
 		return textures;
+	}
+	
+	/**
+	 * 読み込まれているサウンドを返す。あくまでoggファイルの実態であり、
+	 * ここからサウンドイベントを取得することはできない。
+	 * @return 音源
+	 */
+	public HashMap<File, HashMap<String, byte[]>> getSounds() {
+		return sounds;
+	}
+	
+	/**
+	 * sound.jsonとして読み込める形式で返す。
+	 * @return
+	 */
+	public String getSoundJsonString() {
+		return soundJsonString;
 	}
 	
 	/**
@@ -79,6 +102,8 @@ public class Loader {
 		}
 		return textures.get(pack).get(location);
 	}
+	
+	
 	
 	/**
 	 * 指定したパックが読み込みされているかを返す（たとえこのメソッドを呼んだ時点で存在していなくても初回読み込み時にあればtrue）
@@ -128,6 +153,7 @@ public class Loader {
 		ArrayList<ConfigBase> configs = new ArrayList<ConfigBase>(); // コンフィグの内容を一時的に保持しておくところ
 		HashMap<String, MQO> models = new HashMap<String, MQO>(); // モデルファイルを格納しておく場所
 		HashMap<String, BufferedImage> textures = new HashMap<>(); // テクスチャを格納しておく場所
+		HashMap<String, byte[]> sounds = new HashMap<>(); // テクスチャを格納しておく場所
 		
 		try (FileInputStream fis = new FileInputStream(pack)) {
 			try (ZipInputStream zis = new ZipInputStream(fis)) {
@@ -150,22 +176,40 @@ public class Loader {
 							byte[] tmp = new byte[Math.toIntExact(entry.getSize())];
 							zis.read(tmp);
 							baos.write(tmp); // こうしないとJacksonがZipストリームを閉じてしまう
-							ConfigTrafficLight c = g.fromJson(baos.toString(), ConfigTrafficLight.class);
-							// ConfigTrafficLight c = om.readValue(new ByteArrayInputStream(baos.toByteArray()), ConfigTrafficLight.class); // コンフィグとして読み込みを試みる
-							configs.add(c); // 追加
-						} catch (JsonSyntaxException e) {
-							// JSONに適切にマッピングできなかった場合
-							// ポールでやってみる
-							try (ByteArrayOutputStream baos = new ByteArrayOutputStream(Math.toIntExact(entry.getSize()))) {
-								byte[] tmp = new byte[Math.toIntExact(entry.getSize())];
-								zis.read(tmp);
-								baos.write(tmp); // こうしないとJacksonがZipストリームを閉じてしまう
-								ConfigTrafficPole c = g.fromJson(baos.toString(), ConfigTrafficPole.class);
-								configs.add(c);
-							} catch (JsonSyntaxException e2) {
-								// それでもダメな場合
-								GTS.GTSLog.log(Level.WARN, entry.getName() + " is not a available GTS Pack Config. It was skipped. -> " + e.getMessage() );
+							ConfigBase c = null;
+							ConfigTrafficLight c1 = g.fromJson(baos.toString(), ConfigTrafficLight.class);
+							if (c1.getTextures() == null) {
+								// 信号機としての必須項目の不足。この場合はポールのコンフィグとして読み込ませる
+								ConfigTrafficPole c2 = g.fromJson(baos.toString(), ConfigTrafficPole.class);
+								if (c2.getBaseObject() == null) {
+									// ポールとして必須項目が不足している。この場合はアームのコンフィグとして読み込ませる
+									ConfigTrafficArm c3 = g.fromJson(baos.toString(), ConfigTrafficArm.class);
+									if (c3.getStartObject() == null) {
+										// アームでも不足している。ならばボタンで読み込む
+										ConfigTrafficButton c4 = g.fromJson(baos.toString(), ConfigTrafficButton.class);
+										if (c4.getBaseTex() == null) {
+											// ボタンにおいてもダメ。もうこれは不正なJSONファイル。
+											throw new IOException("It's not any config file.");
+										}
+										else {
+											c = c4;
+										}
+									}
+									else {
+										c = c3;
+									}
+								}
+								else {
+									c = c2;
+								}
 							}
+							else {
+								c = c1;
+							}
+							configs.add(c); // 追加
+							
+						} catch (JsonSyntaxException e) {
+							GTS.GTSLog.log(Level.WARN, entry.getName() + " is not a available GTS Pack Config. It was skipped. -> " + e.getMessage() );
 						} catch (Exception e) {
 							// なんかそれ以外のエラーが発生した場合
 							GTS.GTSLog.log(Level.WARN, "Can't load " + entry.getName() + " some reason. -> " + e.getMessage() );
@@ -196,12 +240,44 @@ public class Loader {
 						// 画像ファイルだった場合
 						textures.put(entry.getName(), ImageIO.read(zis)); // メモリバカ食いするのでどうにかしたいが
 					}
+					else if (entry.getName().endsWith(".ogg")) {
+						// サウンドファイルだった場合
+						try (ByteArrayOutputStream baos = new ByteArrayOutputStream(Math.toIntExact(entry.getSize()))) {
+							byte[] tmp = new byte[Math.toIntExact(entry.getSize())];
+							int read = 0;
+							while (read < entry.getSize()) {
+								int already =  zis.read(tmp, read, (int) (entry.getSize()-read));
+								read += already;
+							}
+							baos.write(tmp);
+							
+							sounds.put(entry.getName(), tmp);
+							
+							
+						} catch (IOException e) {
+							// ファイル異常で読み込みすらできない場合
+							GTS.GTSLog.log(Level.WARN, "Can't load" + entry.getName() + " some reason. -> " + e.getMessage());
+						}
+					}
 					
 				}
 				
+				// サウンドファイルに対してsound.jsonを作り上げる
+				ProgressManager.ProgressBar bar = ProgressManager.push("GTS Sound JSON Parse", sounds.size());
+				for (String path: sounds.keySet()) {
+					GTSSoundJson.GTSSoundJsonChild c = soundJson.new GTSSoundJsonChild();
+					List<String> l = new ArrayList<>();
+					l.add(path);
+					c.sounds = l;
+					soundJson.content.put(path.replace("/", "."), c); // 追加
+					bar.step(path);
+				}
+				
+				ProgressManager.pop(bar);
+				
 				// 各種コンフィグに対して処理を追加する
 				ArrayList<ModelBase> m = new ArrayList<>(); // 正常に追加したパックモデル
-				ProgressManager.ProgressBar bar = ProgressManager.push("GTS Model Config Parse", configs.size());
+				bar = ProgressManager.push("GTS Model Config Parse", configs.size());
 				for (ConfigBase configBase : configs) {
 					if (!models.containsKey(configBase.getModel())) {
 						// モデルが存在しない場合（そもそもこのパックは使用不可）
@@ -290,6 +366,7 @@ public class Loader {
 		}
 		
 		this.textures.put(pack, textures);
+		this.sounds.put(pack, sounds);
 		
 		return res;
 	}
@@ -319,6 +396,19 @@ public class Loader {
 			}
 			
 		}
+		JsonObject jo = new JsonObject();
+		for (Map.Entry<String, GTSSoundJson.GTSSoundJsonChild> map : soundJson.content.entrySet()) {
+			JsonObject jo2 = new JsonObject();
+			jo2.addProperty("category", map.getValue().category);
+			jo2.addProperty("stream", map.getValue().stream);
+			JsonArray jo3 = new JsonArray();
+			jo3.add("d_gts:" + map.getValue().sounds.get(0));
+			jo2.add("sounds", jo3);
+			
+			jo.add(map.getKey(), jo2);
+		}
+		soundJsonString = jo.toString();
+		System.out.println(soundJsonString);
 		GTS.GTSLog.log(Level.INFO, "Pack search ended. Add " + packs.size() +  " packs.");
 		this.completeLoad = true;
 		ProgressManager.pop(bar);

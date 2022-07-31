@@ -15,7 +15,7 @@ public class DummyConfigTrafficArm extends ConfigTrafficArm implements Serializa
 	
 	public DummyConfigTrafficArm() throws IOException {
 		this.setId("dummy");
-		this.setTexImage(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_tp.png")).getInputStream()));
+		this.setTexImage(ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "textures/models/dummy_ta.png")).getInputStream()));
 		ArrayList<String> s = new ArrayList<>();
 		s.add("base");
 		this.setBaseObject(s);
@@ -24,6 +24,6 @@ public class DummyConfigTrafficArm extends ConfigTrafficArm implements Serializa
 		s1.add("start");
 		this.setStartObject(s1);
 		
-		this.setSize(1);
+		this.setSize(1f);
 	}
 }

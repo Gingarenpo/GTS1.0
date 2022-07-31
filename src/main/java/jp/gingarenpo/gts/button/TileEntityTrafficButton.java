@@ -102,7 +102,7 @@ public class TileEntityTrafficButton extends GTSTileEntity implements Serializab
 				if (this.addon.getFile() == null) {
 					GTS.GTSLog.debug("Button dummy used");
 					this.setDummyModel();
-					System.out.println(this.addon);
+					//System.out.println(this.addon);
 				}
 			}
 		} catch (IOException | ClassNotFoundException e) {
@@ -119,7 +119,7 @@ public class TileEntityTrafficButton extends GTSTileEntity implements Serializab
 			GTS.GTSLog.warn("Warning. Cannot read data of Button -> " + e.getMessage());
 		}
 		
-		GTS.GTSLog.info("Read NBT(button)");
+		//GTS.GTSLog.info("Read NBT(button)");
 		
 	}
 	
@@ -160,7 +160,7 @@ public class TileEntityTrafficButton extends GTSTileEntity implements Serializab
 			GTS.GTSLog.warn("Warning. Cannot write data of Button -> " + e.getMessage());
 		}
 		
-		GTS.GTSLog.info("Write NBT(button)");
+		//GTS.GTSLog.info("Write NBT(button)");
 		
 		return compound;
 	}

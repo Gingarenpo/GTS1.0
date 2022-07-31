@@ -1,4 +1,4 @@
-package jp.gingarenpo.gts.core;
+package jp.gingarenpo.gts.core.gui;
 
 import jp.gingarenpo.gts.controller.TileEntityTrafficController;
 import jp.gingarenpo.gts.controller.gui.GUIContainerTrafficController;

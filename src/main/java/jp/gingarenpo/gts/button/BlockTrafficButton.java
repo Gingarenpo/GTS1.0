@@ -2,12 +2,17 @@ package jp.gingarenpo.gts.button;
 
 import jp.gingarenpo.gingacore.helper.GMathHelper;
 import jp.gingarenpo.gts.GTS;
+import jp.gingarenpo.gts.core.model.ModelBase;
+import jp.gingarenpo.gts.pole.gui.SwingGUITrafficPole;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
@@ -73,7 +78,7 @@ public class BlockTrafficButton extends BlockContainer {
 	
 	/**
 	 * このブロックが右クリックされたときの動作。
-	 * 押ボタン箱のモデルを変更するためのSwingパネルを開く。
+	 * ボタンを押す。
 	 * @param worldIn 世界。
 	 * @param pos 座標。
 	 * @param state ブロックの状態。
@@ -87,7 +92,21 @@ public class BlockTrafficButton extends BlockContainer {
 	 */
 	@Override
 	public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
-		return super.onBlockActivated(worldIn, pos, state, playerIn, hand, facing, hitX, hitY, hitZ);
+		// TileEntity探す
+		TileEntity te = worldIn.getTileEntity(pos);
+		if (!(te instanceof  TileEntityTrafficButton)) return false;
+		TileEntityTrafficButton tetb = (TileEntityTrafficButton) te;
+		
+		// TileEntity内のデータをPushにする（既になっていたら無視）
+		if (tetb.getButton().isPushed()) return false;
+		tetb.getButton().push();
+		
+		// ついでに音声も再生する
+		if (worldIn.isRemote) {
+			Minecraft.getMinecraft().getSoundHandler().playSound(new SoundTrafficButton(tetb));
+		}
+		
+		return true;
 	}
 	
 	@Override
@@ -101,5 +120,22 @@ public class BlockTrafficButton extends BlockContainer {
 		EntityPlayer ep = (EntityPlayer) placer;
 		// System.out.println(GMathHelper.normalizeAngle(-ep.getPitchYaw().y + 180));
 		te.setAngle(GMathHelper.normalizeAngle(-ep.getPitchYaw().y + 180)); // プレイヤーと逆向きに配置
+		
+		// モデルの変更があればアームの形状も変更する
+		// ItemStackの状態を確認する
+		if (!(placer instanceof EntityPlayer)) return;
+		ItemStack is = placer.getHeldItem(EnumHand.MAIN_HAND); // メインハンドに持っているアイテムを取得
+		if (is.getItem() != ItemBlock.getItemFromBlock(GTS.Blocks.button)) return; // 違う者の場合は無視（あり得ないけど）
+		
+		// ItemStackのモデル名を確認する
+		NBTTagCompound c = is.getTagCompound();
+		if (c == null) return; // 無視
+		String name = c.getString("gts_item_model_pole"); // NBTから取得したパック名
+		ModelBase model = SwingGUITrafficPole.getModelFromChoiceName(name);
+		if (model == null) {
+			GTS.GTSLog.warn("ItemStack declare default model as " + name + ", but it is not found. dummy used.");
+			return;
+		}
+		te.setAddon((ModelTrafficButton) model); // 入れる
 	}
 }
