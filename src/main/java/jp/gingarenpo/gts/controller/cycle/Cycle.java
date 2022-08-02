@@ -192,6 +192,7 @@ public class Cycle implements Serializable {
 	 * ラストの場合にリセットしたい場合は別メソッドを使う。ただし継続要求をされている場合はfalseを返し変更を行わない。
 	 */
 	public boolean nextPhase(TrafficController controller, World world) {
+		if (getNowPhase() == null) return true;
 		if (getNowPhase().shouldContinue(controller, controller.getTicks(), controller.isDetected(), world)) {
 			getNowPhase().addTick();
 			return false;

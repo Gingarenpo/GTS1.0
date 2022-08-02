@@ -1,6 +1,5 @@
 package jp.gingarenpo.gts.controller.gui.swing;
 
-import com.google.common.reflect.ClassPath;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import jp.gingarenpo.gts.GTS;
@@ -15,6 +14,7 @@ import jp.gingarenpo.gts.core.json.ExcludeJsonStrategy;
 import jp.gingarenpo.gts.exception.DataExistException;
 import jp.gingarenpo.gts.light.ConfigTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
+import net.minecraftforge.fml.common.Loader;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
@@ -27,7 +27,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Swingの機能を使って擬似的なGUIを作成する。
@@ -66,21 +69,27 @@ public class SwingGUITrafficController extends JFrame {
 	private final JPanel cyclesPanel;
 	
 	public static final JsonDeserializer<Phase> JSON_DESERIALIZER_PHASE = (json, t, ctx) -> {
-		System.out.println(json);
-		try {
-			Set<ClassPath.ClassInfo> all = ClassPath.from(Thread.currentThread().getContextClassLoader()).getAllClasses();
-			for (ClassPath.ClassInfo c: all) {
-				if (! c.getPackageName().equals(Phase.class.getPackage().getName()) || c.getSimpleName().equals("Phase")) continue;
-				for (Field f: c.load().getDeclaredFields()) {
+		// 登録したクラスから確認する
+		for (String className: GTS.phases) {
+			try {
+				// クラスを読み出す
+				Class c = Class.forName(className, true, Loader.instance().getModClassLoader());
+				
+				// クラスで定義されたフィールドが存在すればそのクラスで返す
+				for (Field f: c.getDeclaredFields()) {
 					if (json.getAsJsonObject().get(f.getName()) != null) {
-						return ctx.deserialize(json, c.load());
+						return ctx.deserialize(json, c);
 					}
 				}
+				
+			} catch (ClassNotFoundException e) {
+				// 見つからない場合はスキップする
+				GTS.GTSLog.warn("Warning. " + className + " is not found on ClassLoader.");
+				continue;
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
-		return null;
+		GTS.GTSLog.error("Error. Cannot deserialize Phase because no class found. PhaseBase class use.");
+		return ctx.deserialize(json, PhaseBase.class);
 	};
 	
 	GridBagLayout cyclesPanelLayout = new GridBagLayout();

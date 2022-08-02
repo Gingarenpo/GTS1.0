@@ -28,7 +28,7 @@ public class Phase implements Serializable {
 	/**
 	 * このフェーズの名称。
 	 */
-	protected String name;
+	protected String name = "";
 	
 	/**
 	 * 各チャンネル毎にどの信号を光らせるかを指定するハッシュマップ。

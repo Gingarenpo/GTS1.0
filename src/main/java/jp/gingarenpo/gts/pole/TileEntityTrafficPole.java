@@ -196,6 +196,7 @@ public class TileEntityTrafficPole extends GTSTileEntity implements ITickable {
 			try (ByteArrayInputStream bais = new ByteArrayInputStream(compound.getByteArray("gts_tp_arm"))) {
 				try (ObjectInputStream ois = new ObjectInputStream(bais)) {
 					this.arm = (TrafficArm) ois.readObject();
+					this.arm.getAddon().reloadModel();
 				}
 			} catch (IOException | ClassNotFoundException e) {
 				// メモリ不足などでストリームを確保できなかった場合、あるいはオブジェクトが正しく読み込まれなかった時

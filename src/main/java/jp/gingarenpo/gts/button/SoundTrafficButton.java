@@ -41,7 +41,7 @@ public class SoundTrafficButton implements ISound {
 	@Override
 	public SoundEventAccessor createAccessor(SoundHandler handler) {
 		
-		this.soundEventAccessor = new SoundEventAccessor(new ResourceLocation("gts", "dynamic_sound.json"), null);
+		this.soundEventAccessor = new SoundEventAccessor(rs, null);
 		return soundEventAccessor;
 	}
 	

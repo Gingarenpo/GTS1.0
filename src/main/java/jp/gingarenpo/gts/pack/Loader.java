@@ -1,12 +1,11 @@
 package jp.gingarenpo.gts.pack;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import jp.gingarenpo.gingacore.mqo.MQO;
 import jp.gingarenpo.gts.GTS;
 import jp.gingarenpo.gts.arm.ConfigTrafficArm;
+import jp.gingarenpo.gts.arm.ModelTrafficArm;
 import jp.gingarenpo.gts.button.ConfigTrafficButton;
 import jp.gingarenpo.gts.button.ModelTrafficButton;
 import jp.gingarenpo.gts.core.config.ConfigBase;
@@ -22,7 +21,9 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -38,7 +39,6 @@ public class Loader {
 	private HashMap<File, HashMap<String, BufferedImage>> textures = new HashMap<>(); // テクスチャの存在を示すもの
 	private HashMap<File, HashMap<String, byte[]>> sounds = new HashMap<>(); // サウンドのバイナリ自体を格納しておくところ
 	
-	private GTSSoundJson soundJson = new GTSSoundJson(); // JSON作成用
 	private String soundJsonString; // inputStream用
 	
 	private boolean completeLoad = false;
@@ -181,10 +181,10 @@ public class Loader {
 							if (c1.getTextures() == null) {
 								// 信号機としての必須項目の不足。この場合はポールのコンフィグとして読み込ませる
 								ConfigTrafficPole c2 = g.fromJson(baos.toString(), ConfigTrafficPole.class);
-								if (c2.getBaseObject() == null) {
+								if (c2.getTopObject().size() == 0) {
 									// ポールとして必須項目が不足している。この場合はアームのコンフィグとして読み込ませる
 									ConfigTrafficArm c3 = g.fromJson(baos.toString(), ConfigTrafficArm.class);
-									if (c3.getStartObject() == null) {
+									if (c3.getBaseObject().size() == 0) {
 										// アームでも不足している。ならばボタンで読み込む
 										ConfigTrafficButton c4 = g.fromJson(baos.toString(), ConfigTrafficButton.class);
 										if (c4.getBaseTex() == null) {
@@ -262,26 +262,15 @@ public class Loader {
 					
 				}
 				
-				// サウンドファイルに対してsound.jsonを作り上げる
-				ProgressManager.ProgressBar bar = ProgressManager.push("GTS Sound JSON Parse", sounds.size());
-				for (String path: sounds.keySet()) {
-					GTSSoundJson.GTSSoundJsonChild c = soundJson.new GTSSoundJsonChild();
-					List<String> l = new ArrayList<>();
-					l.add(path);
-					c.sounds = l;
-					soundJson.content.put(path.replace("/", "."), c); // 追加
-					bar.step(path);
-				}
-				
-				ProgressManager.pop(bar);
 				
 				// 各種コンフィグに対して処理を追加する
 				ArrayList<ModelBase> m = new ArrayList<>(); // 正常に追加したパックモデル
-				bar = ProgressManager.push("GTS Model Config Parse", configs.size());
+				ProgressManager.ProgressBar bar = ProgressManager.push("GTS Model Config Parse", configs.size());
 				for (ConfigBase configBase : configs) {
 					if (!models.containsKey(configBase.getModel())) {
 						// モデルが存在しない場合（そもそもこのパックは使用不可）
 						GTS.GTSLog.log(Level.WARN, configBase.getId() + " declared model as " + configBase.getModel() + ", but it is not found or broken. This model was skipped.");
+						bar.step(configBase.getId());
 						continue;
 					}
 					if (configBase instanceof ConfigTrafficLight) {
@@ -289,6 +278,7 @@ public class Loader {
 						if (!textures.containsKey(config.getTextures().getBase())) {
 							// ベースのテクスチャが存在しない場合（そもそもこのパックは使用不可)
 							GTS.GTSLog.log(Level.WARN, config.getId() + " declared Base Texture as " + config.getTextures().getBase() + ", but it is not found or broken. This model was skipped.");
+							bar.step(configBase.getId());
 							continue;
 						}
 						if (config.getTextures().getLight() == null || !textures.containsKey(config.getTextures().getLight())) {
@@ -314,6 +304,7 @@ public class Loader {
 						ConfigTrafficPole config = (ConfigTrafficPole) configBase;
 						if (config.getTexture() == null) {
 							GTS.GTSLog.log(Level.WARN, config.getId() + " didn't declare Texture. This model was skipped.");
+							bar.step(configBase.getId());
 							continue;
 						}
 						
@@ -330,6 +321,7 @@ public class Loader {
 						ConfigTrafficButton config = (ConfigTrafficButton) configBase;
 						if (config.getTextures() == null || config.getTextures().size() == 0) {
 							GTS.GTSLog.log(Level.WARN, config.getId() + " didn't declare Texture. This model was skipped.");
+							bar.step(configBase.getId());
 							continue;
 						}
 						
@@ -348,6 +340,32 @@ public class Loader {
 						}
 						m.add(new ModelTrafficButton(config, models.get(config.getModel()), pack));
 						
+					}
+					else if (configBase instanceof ConfigTrafficArm) {
+						ConfigTrafficArm config = (ConfigTrafficArm) configBase;
+						if (config.getTexture() == null) {
+							GTS.GTSLog.log(Level.WARN, config.getId() + " didn't declare Texture. This model was skipped.");
+							bar.step(configBase.getId());
+							continue;
+						}
+						
+						if (config.getBaseObject() == null) {
+							GTS.GTSLog.warn(config.getId() + "'s Arm base object not found. This config cannot use. skipped.");
+							bar.step(configBase.getId());
+							continue;
+						}
+						
+						if (config.getStartObject() == null) {
+							GTS.GTSLog.warn(config.getId() + "'s Arm start object not found. It's not recommended.");
+							config.setStartObject(new ArrayList<>());
+						}
+						
+						if (config.getEndObject() == null) {
+							GTS.GTSLog.warn(config.getId() + "'s Arm end object not found.");
+							config.setEndObject(new ArrayList<>());
+						}
+						config.setTexImage(textures.get(config.getTexture()));
+						m.add(new ModelTrafficArm(config, models.get(config.getModel()), pack));
 					}
 					bar.step(configBase.getId());
 					
@@ -396,19 +414,6 @@ public class Loader {
 			}
 			
 		}
-		JsonObject jo = new JsonObject();
-		for (Map.Entry<String, GTSSoundJson.GTSSoundJsonChild> map : soundJson.content.entrySet()) {
-			JsonObject jo2 = new JsonObject();
-			jo2.addProperty("category", map.getValue().category);
-			jo2.addProperty("stream", map.getValue().stream);
-			JsonArray jo3 = new JsonArray();
-			jo3.add("d_gts:" + map.getValue().sounds.get(0));
-			jo2.add("sounds", jo3);
-			
-			jo.add(map.getKey(), jo2);
-		}
-		soundJsonString = jo.toString();
-		System.out.println(soundJsonString);
 		GTS.GTSLog.log(Level.INFO, "Pack search ended. Add " + packs.size() +  " packs.");
 		this.completeLoad = true;
 		ProgressManager.pop(bar);

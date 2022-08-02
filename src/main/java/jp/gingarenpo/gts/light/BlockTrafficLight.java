@@ -206,25 +206,25 @@ public class BlockTrafficLight extends BlockContainer {
 		
 		// モデルの変更があればアームの形状も変更する
 		// ItemStackの状態を確認する
-		if (is.getItem() != GTS.Items.arm) return connect((TileEntityTrafficPole) from, a, ist); // 違う者の場合は無視（あり得ないけど）
+		if (is.getItem() != GTS.Items.arm) return connect(te, (TileEntityTrafficPole) from, a, ist); // 違う者の場合は無視（あり得ないけど）
 		
 		// ItemStackのモデル名を確認する
 		NBTTagCompound c = is.getTagCompound();
-		if (c == null) return connect((TileEntityTrafficPole) from, a, ist);; // 無視
-		String name = c.getString("gts_item_model_pole"); // NBTから取得したパック名
+		if (c == null) return connect(te, (TileEntityTrafficPole) from, a, ist);; // 無視
+		String name = c.getString("gts_item_model_arm"); // NBTから取得したパック名
 		ModelBase model = SwingGUITrafficPole.getModelFromChoiceName(name);
 		if (model == null) {
 			GTS.GTSLog.warn("ItemStack declare default model as " + name + ", but it is not found. dummy used.");
-			return connect((TileEntityTrafficPole) from, a, ist);
+			return connect(te, (TileEntityTrafficPole) from, a, ist);
 		}
 		a.setAddon((ModelTrafficArm) model); // 入れる
 		
-		return connect((TileEntityTrafficPole) from, a, ist);
+		return connect(te, (TileEntityTrafficPole) from, a, ist);
 	}
 	
-	private boolean connect(TileEntityTrafficPole from, TrafficArm to, NBTTagCompound ist) {
+	private boolean connect(TileEntityTrafficLight self, TileEntityTrafficPole from, TrafficArm to, NBTTagCompound ist) {
 		// ようやく接続できる
-		to.add(new double[] { from.getPos().getX(), from.getPos().getY(), from.getPos().getZ() });
+		to.add(new double[] { self.getPos().getX(), self.getPos().getY(), self.getPos().getZ() });
 		from.endConnect();
 		from.setArm(to); // アームを追加
 		ist.setIntArray("gts_pre_connect_xyz", new int[1]); // 1個しか要素がない状態は無接続とする

@@ -67,9 +67,12 @@ public class TrafficArm implements Serializable {
 		this.addon = addon;
 	}
 	
+	/**
+	 * ダミーモデルを入手する。TileEntity持っていないのでここからしかできない。
+	 */
 	public void setDummyModel() {
 		try {
-			this.addon = new ModelTrafficArm(new DummyConfigTrafficArm(), new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/dummy/dummy_ta.mqo")).getInputStream()));
+			this.addon = new ModelTrafficArm(new DummyConfigTrafficArm(), new MQO(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation(GTS.MOD_ID, "models/dummy/dummy_ta.mqo")).getInputStream()), null);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

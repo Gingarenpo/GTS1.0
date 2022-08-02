@@ -9,6 +9,8 @@ import jp.gingarenpo.gts.button.gui.SwingGUITrafficButton;
 import jp.gingarenpo.gts.controller.BlockTrafficController;
 import jp.gingarenpo.gts.controller.PacketTrafficController;
 import jp.gingarenpo.gts.controller.TileEntityTrafficController;
+import jp.gingarenpo.gts.controller.cycle.Cycle;
+import jp.gingarenpo.gts.controller.phase.Phase;
 import jp.gingarenpo.gts.core.gui.GTSGUIHandler;
 import jp.gingarenpo.gts.core.network.PacketItemStack;
 import jp.gingarenpo.gts.event.GTSWorldEvent;
@@ -38,6 +40,7 @@ import net.minecraftforge.common.config.Config;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.ModContainer;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -58,6 +61,10 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 
 /**
@@ -87,6 +94,9 @@ public class GTS {
 	public static int windowHeight; // こちらも同じく
 	
 	public static CreativeTabs gtsTab; // GTCのタブ
+	
+	public static ArrayList<String> phases = new ArrayList<>(); // フェーズのクラスを集めたもの。手動でハードコーディングするのめんどくさかったので。。
+	public static ArrayList<String> cycles = new ArrayList<>(); // サイクル。これ今後分野が増えたときにめんどくさくなりそうなのでいずれここも自動化したい
 
 	
 	@SidedProxy(clientSide = "jp.gingarenpo.gts.proxy.GTSProxy", serverSide = "jp.gingarenpo.gts.proxy.GTSServerProxy")
@@ -105,7 +115,7 @@ public class GTS {
 	 * @param event
 	 */
 	@Mod.EventHandler
-	public void construct(FMLConstructionEvent event) {
+	public void construct(FMLConstructionEvent event) throws IOException {
 		// タブの登録
 		gtsTab = new CreativeTabs("GTS") {
 			@Override
@@ -118,6 +128,57 @@ public class GTS {
 		// ウィンドウの準備だけする（表示はしない）
 		System.setProperty("awt.useSystemAAFontSettings","on");
 		System.setProperty("swing.aatext", "true");
+		
+		for (ModContainer m : net.minecraftforge.fml.common.Loader.instance().getActiveModList()) {
+			if (! m.getModId().equals(MOD_ID)) continue;
+			// GTSのModを見つけたら、それを開く
+			// 但し、開発環境の場合はjarファイルではなくディレクトリなので単に中身をサーチするだけでいい
+			if (m.getSource().isDirectory()) {
+				// ディレクトリの場合は「Phaseのパッケージ」までアクセスする
+				File phaseFile = new File(m.getSource().getAbsolutePath() + "/" + Phase.class.getPackage().getName().replace(".", "/"));
+				if (!phaseFile.exists()) break; // ないことはないが万が一なかったらそれ以上処理が進まないので無視
+				for (File f: phaseFile.listFiles((dir, name) -> !name.equals("Phase.class"))) {
+					// 見つかったクラスを読み込む
+					phases.add(Phase.class.getPackage().getName() + "." + f.getName().replace(".class", ""));
+				}
+				// ディレクトリの場合は「Cycleのパッケージ」までアクセスする
+				File cycleFile = new File(m.getSource().getAbsolutePath() + "/" + Cycle.class.getPackage().getName().replace(".", "/"));
+				if (!cycleFile.exists()) break; // ないことはないが万が一なかったらそれ以上処理が進まないので無視
+				for (File f: cycleFile.listFiles((dir, name) -> !name.equals("Cycle.class"))) {
+					// 見つかったクラスを読み込む
+					cycles.add(Cycle.class.getPackage().getName() + "." + f.getName().replace(".class", ""));
+				}
+				
+			}
+			else {
+				// Jarファイルの場合は開く
+				try (JarFile jar = new JarFile(m.getSource())) {
+					Enumeration<JarEntry> es = jar.entries();
+					while (es.hasMoreElements()) {
+						JarEntry e = es.nextElement();
+						if (e.getName().startsWith(Phase.class.getPackage().getName().replace(".", "/"))) {
+							// とりあえずフェーズの位置にあるので
+							if (e.getName().equals(Phase.class.getPackage().getName().replace(".", "/"))) continue;
+							String[] tmp = e.getName().split("/"); // 区切って名前を取得
+							if (tmp[tmp.length-1].equals("Phase.class")) continue;
+							// フェーズ追加
+							phases.add(e.getName().replace("/", ".").replace(".class", ""));
+						}
+						if (e.getName().startsWith(Cycle.class.getPackage().getName().replace(".", "/"))) {
+							// とりあえずフェーズの位置にあるので
+							if (e.getName().equals(Cycle.class.getPackage().getName().replace(".", "/"))) continue;
+							String[] tmp = e.getName().split("/"); // 区切って名前を取得
+							if (tmp[tmp.length-1].equals("Cycle.class")) continue;
+							// フェーズ追加
+							cycles.add(e.getName().replace("/", ".").replace(".class", ""));
+						}
+					}
+				}
+			}
+			break;
+		}
+		System.out.println(phases);
+		System.out.println(cycles);
 	}
 	
 	/**
@@ -142,6 +203,8 @@ public class GTS {
 				throw new IOException("GTS can't create mod directory."); // ディレクトリを作れないとエラー
 			}
 		}
+		
+		
 		
 		
 		// プロキシ処理
@@ -313,7 +376,7 @@ public class GTS {
 				}
 				
 				
-				// ポールのモデル更新ウィンドウを開く
+				// アームのモデル更新ウィンドウを開く
 				if (GTS.window != null) return; // 二重に開かない
 				EntityPlayer player = event.getEntityPlayer();
 				World world = event.getWorld();
@@ -344,7 +407,7 @@ public class GTS {
 				}
 				
 				
-				// ポールのモデル更新ウィンドウを開く
+				// 押ボタン箱のモデル更新ウィンドウを開く
 				if (GTS.window != null) return; // 二重に開かない
 				EntityPlayer player = event.getEntityPlayer();
 				World world = event.getWorld();
