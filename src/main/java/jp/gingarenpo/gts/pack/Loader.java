@@ -174,8 +174,12 @@ public class Loader {
 						Gson g = new Gson();
 						try (ByteArrayOutputStream baos = new ByteArrayOutputStream(Math.toIntExact(entry.getSize()))) {
 							byte[] tmp = new byte[Math.toIntExact(entry.getSize())];
-							zis.read(tmp);
-							baos.write(tmp); // こうしないとJacksonがZipストリームを閉じてしまう
+							int read = 0;
+							while (read < entry.getSize()) {
+								int already =  zis.read(tmp, read, (int) (entry.getSize()-read));
+								read += already;
+							}
+							baos.write(tmp);
 							ConfigBase c = null;
 							ConfigTrafficLight c1 = g.fromJson(baos.toString(), ConfigTrafficLight.class);
 							if (c1.getTextures() == null) {
