@@ -23,6 +23,11 @@ public class RendererTrafficPole extends TileEntitySpecialRenderer<TileEntityTra
 	private HashMap<String, ResourceLocation> textures = new HashMap<>();
 	
 	@Override
+	public boolean isGlobalRenderer(TileEntityTrafficPole te) {
+		return true;
+	}
+	
+	@Override
 	public void render(TileEntityTrafficPole te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
 		super.render(te, x, y, z, partialTicks, destroyStage, alpha);
 		

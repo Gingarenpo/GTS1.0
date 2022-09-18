@@ -22,6 +22,11 @@ public class RendererTrafficButton extends TileEntitySpecialRenderer<TileEntityT
 	
 	private HashMap<String, ResourceLocation> textures = new HashMap<>();
 	
+	@Override
+	public boolean isGlobalRenderer(TileEntityTrafficButton te) {
+		return true;
+	}
+	
 	/**
 	 * この押ボタン箱を描画する。
 	 * @param te TileEntity

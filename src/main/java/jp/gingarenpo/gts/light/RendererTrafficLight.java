@@ -26,6 +26,10 @@ public class RendererTrafficLight extends TileEntitySpecialRenderer<TileEntityTr
 	private HashMap<String, ResourceLocation> lightTexs = new HashMap<>();
 	private HashMap<String, ResourceLocation> noLightTexs = new HashMap<>();
 	
+	@Override
+	public boolean isGlobalRenderer(TileEntityTrafficLight te) {
+		return true;
+	}
 	
 	/**
 	 * 信号機を実際に描画するためのレンダー。ここでOpenGLに関する描画を呼び出すことができる。

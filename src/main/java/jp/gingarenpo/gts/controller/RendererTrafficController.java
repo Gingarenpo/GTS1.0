@@ -3,20 +3,22 @@ package jp.gingarenpo.gts.controller;
 import jp.gingarenpo.gingacore.mqo.MQOObject;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.EnumFacing;
 import org.lwjgl.opengl.GL11;
 
 /**
  * TESR。制御機のレンダーとなる。ここで実際にレンダリングを行う。
  */
 public class RendererTrafficController extends TileEntitySpecialRenderer<TileEntityTrafficController> {
+	
+	@Override
+	public boolean isGlobalRenderer(TileEntityTrafficController te) {
+		return true;
+	}
+	
 	
 	/**
 	 * 実際に制御機をレンダリングする。各種パラメーターが大量に渡されるため、それをもとに、この中でOpenGLを駆使してレンダリングする。
@@ -30,6 +32,9 @@ public class RendererTrafficController extends TileEntitySpecialRenderer<TileEnt
 	 * @param destroyStage 破壊ステージ。ツルハシとかで壊すとひび割れるあの段階。
 	 * @param alpha 透明度。
 	 */
+	
+	
+	
 	@Override
 	public void render(TileEntityTrafficController te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
 		super.render(te, x, y, z, partialTicks, destroyStage, alpha);

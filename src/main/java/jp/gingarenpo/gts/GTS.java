@@ -24,6 +24,12 @@ import jp.gingarenpo.gts.pole.PacketTrafficPole;
 import jp.gingarenpo.gts.pole.TileEntityTrafficPole;
 import jp.gingarenpo.gts.pole.gui.SwingGUITrafficPole;
 import jp.gingarenpo.gts.proxy.GTSProxy;
+import jp.gingarenpo.gts.sign.BlockTrafficSign;
+import jp.gingarenpo.gts.sign.PacketTrafficSign;
+import jp.gingarenpo.gts.sign.TileEntityTrafficSign;
+import jp.gingarenpo.gts.sign.data.NamedTrafficSign;
+import jp.gingarenpo.gts.sign.data.TrafficSign;
+import jp.gingarenpo.gts.sign.gui.SwingGUITrafficSign;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.creativetab.CreativeTabs;
@@ -59,8 +65,7 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
@@ -216,6 +221,7 @@ public class GTS {
 		GameRegistry.registerTileEntity(TileEntityTrafficLight.class, "gts:light");
 		GameRegistry.registerTileEntity(TileEntityTrafficPole.class, "gts:pole");
 		GameRegistry.registerTileEntity(TileEntityTrafficButton.class, "gts:button");
+		GameRegistry.registerTileEntity(TileEntityTrafficSign.class, "gts:sign");
 		
 		// GUIの登録
 		NetworkRegistry.INSTANCE.registerGuiHandler(GTS.INSTANCE, new GTSGUIHandler()); // GUI
@@ -261,6 +267,7 @@ public class GTS {
 		public static final BlockTrafficLight light = null; // 信号機
 		public static final BlockTrafficPole pole = null; // ポール
 		public static final BlockTrafficButton button = null; // 押ボタン箱
+		public static final BlockTrafficSign sign = null; // 看板
 	}
 	
 	
@@ -284,6 +291,9 @@ public class GTS {
 		@GameRegistry.ObjectHolder("button")
 		public static final ItemBlock button_item = null; // 押ボタン箱のドロップ扱い
 		
+		@GameRegistry.ObjectHolder("sign")
+		public static final ItemBlock sign_item = null; // 看板のドロップ扱い
+		
 		
 		public static final ItemTrafficArm arm = null;
 	}
@@ -306,6 +316,7 @@ public class GTS {
 					new ItemBlock(Blocks.light).setRegistryName(Blocks.light.getRegistryName()),
 					new ItemBlock(Blocks.pole).setRegistryName(Blocks.pole.getRegistryName()),
 					new ItemBlock(Blocks.button).setRegistryName(Blocks.button.getRegistryName()),
+					new ItemBlock(Blocks.sign).setRegistryName(Blocks.sign.getRegistryName()),
 					new ItemTrafficArm()
 			);
 		}
@@ -319,7 +330,8 @@ public class GTS {
 					new BlockTrafficController(),
 					new BlockTrafficLight(),
 					new BlockTrafficPole(),
-					new BlockTrafficButton()
+					new BlockTrafficButton(),
+					new BlockTrafficSign()
 			); // ブロックを実際に登録
 		}
 		
@@ -427,6 +439,68 @@ public class GTS {
 				});
 				return;
 			}
+			else if (is.getItem() == ItemBlock.getItemFromBlock(Blocks.sign)) {
+				// 看板を持った状態でクリックした
+				NBTTagCompound compound = is.getTagCompound(); // 取得
+				if (compound == null) {
+					compound = new NBTTagCompound(); // 新たにNBTタグを作成
+					// モデルのパック名を入れる（getなんとかnameで取れるやつ）
+					try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+						try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+							oos.writeObject(new NamedTrafficSign());
+						}
+						compound.setByteArray("gts_sign_data", baos.toByteArray());
+					}
+					catch (IOException e) {
+						// 書き込みに失敗した場合
+						e.printStackTrace();
+					}
+					
+					is.setTagCompound(compound);
+				}
+				
+				// データを取得する
+				TrafficSign ts = null;
+				if (!compound.hasKey("gts_sign_data")) {
+					// データが存在しない場合（作成に失敗している）
+					GTS.GTSLog.error("Error. gts_sign_data is not found. Is it sure to write?");
+					return;
+				}
+				try (ByteArrayInputStream bais = new ByteArrayInputStream(compound.getByteArray("gts_sign_data"))) {
+					try (ObjectInputStream ois = new ObjectInputStream(bais)) {
+						ts = (TrafficSign) ois.readObject();
+					}
+				} catch (IOException | ClassNotFoundException e) {
+					// 死んだとき
+					e.printStackTrace();
+				}
+				
+				if (ts == null) {
+					// 取得できなかった場合
+					GTS.GTSLog.error("Error. gts_sign_data can't load. Is it sure to write?");
+					return;
+				}
+				
+				// データを基にGUIを開く
+				if (GTS.window != null) return; // 二重に開かない
+				EntityPlayer player = event.getEntityPlayer();
+				World world = event.getWorld();
+				player.openGui(GTS.INSTANCE, 1, world, player.getPosition().getX(), player.getPosition().getY(), player.getPosition().getZ());
+				GTS.window = new SwingGUITrafficSign(ts);
+				GTS.window.setVisible(true);
+				GTS.window.addWindowListener(new WindowAdapter() {
+					
+					@Override
+					public void windowClosed(WindowEvent e) {
+						player.closeScreen();
+						GTS.window = null; // 元に戻す
+						
+						// サーバーにパケットを送信する
+						GTS.MOD_NETWORK.sendToServer(new PacketItemStack(is.getTagCompound(), player.getName()));
+					}
+				});
+				return;
+			}
 		}
 		
 	
@@ -455,6 +529,7 @@ public class GTS {
 			GTSPacket.registerPacket(PacketTrafficLight.class, PacketTrafficLight.class, Side.SERVER);
 			GTSPacket.registerPacket(PacketTrafficPole.class, PacketTrafficPole.class, Side.SERVER);
 			GTSPacket.registerPacket(PacketTrafficButton.class, PacketTrafficButton.class, Side.SERVER);
+			GTSPacket.registerPacket(PacketTrafficSign.class, PacketTrafficSign.class, Side.SERVER);
 			
 			// モデル更新を伝えるためのパケット
 			GTSPacket.registerPacket(PacketItemStack.class, PacketItemStack.class, Side.SERVER);

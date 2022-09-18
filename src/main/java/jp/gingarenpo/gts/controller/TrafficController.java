@@ -354,7 +354,7 @@ public class TrafficController implements Serializable {
 	 * @param world この制御機が設置されているワールドのインスタンス。
 	 */
 	public boolean checkCycle(World world) {
-		if (now != null) {
+		if (now != null && getNowCycle() != null) {
 			// 現在サイクルが起動している場合、まず終了条件を確かめる
 			if (!getNowCycle().isLast() || (getNowCycle().isLast() && !getNowCycle().resetPhase(this, world))) {
 				// サイクルを終了できない場合（まだこのサイクルが起動中である場合）

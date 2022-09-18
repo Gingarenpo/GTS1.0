@@ -10,6 +10,8 @@ import jp.gingarenpo.gts.light.RendererTrafficLight;
 import jp.gingarenpo.gts.light.TileEntityTrafficLight;
 import jp.gingarenpo.gts.pole.RendererTrafficPole;
 import jp.gingarenpo.gts.pole.TileEntityTrafficPole;
+import jp.gingarenpo.gts.sign.RendererTrafficSign;
+import jp.gingarenpo.gts.sign.TileEntityTrafficSign;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResourcePack;
 import net.minecraft.util.ResourceLocation;
@@ -45,6 +47,7 @@ public class GTSProxy {
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityTrafficLight.class, new RendererTrafficLight());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityTrafficPole.class, new RendererTrafficPole());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityTrafficButton.class, new RendererTrafficButton());
+		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityTrafficSign.class, new RendererTrafficSign());
 	}
 	
 	/**
