@@ -36,7 +36,7 @@ public class GTSProxy {
 		setCustomModelResourceLocation(GTS.Items.pole_item, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "pole"), "inventory"));
 		setCustomModelResourceLocation(GTS.Items.arm, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "arm"), "inventory"));
 		setCustomModelResourceLocation(GTS.Items.button_item, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "button"), "inventory"));
-		
+		setCustomModelResourceLocation(GTS.Items.sign_item, 0, new net.minecraft.client.renderer.block.model.ModelResourceLocation(new ResourceLocation(GTS.MOD_ID, "sign"), "inventory"));
 	}
 	
 	/**

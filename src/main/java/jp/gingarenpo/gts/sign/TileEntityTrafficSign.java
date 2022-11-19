@@ -32,6 +32,11 @@ public class TileEntityTrafficSign extends GTSTileEntity {
 	 */
 	private boolean texChange;
 	
+	/**
+	 * 設置角度
+	 */
+	private double angle;
+	
 	public TileEntityTrafficSign() {}
 	public TileEntityTrafficSign(TrafficSign data) {
 		this.data = data;
@@ -52,6 +57,7 @@ public class TileEntityTrafficSign extends GTSTileEntity {
 		
 		name = compound.getString("gts_sign_name");
 		texChange = compound.getBoolean("gts_sign_tex");
+		angle = compound.getDouble("gts_sign_angle");
 		
 		// data読む
 		try (ByteArrayInputStream bais = new ByteArrayInputStream(compound.getByteArray("gts_sign_data"))) {
@@ -69,6 +75,7 @@ public class TileEntityTrafficSign extends GTSTileEntity {
 		NBTTagCompound nbt = super.writeToNBT(compound);
 		nbt.setString("gts_sign_name", name);
 		nbt.setBoolean("gts_sign_tex", texChange);
+		nbt.setDouble("gts_sign_angle", angle);
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
 				oos.writeObject(data);
@@ -139,5 +146,13 @@ public class TileEntityTrafficSign extends GTSTileEntity {
 	
 	public void setTexChange(boolean texChange) {
 		this.texChange = texChange;
+	}
+	
+	public double getAngle() {
+		return angle;
+	}
+	
+	public void setAngle(double angle) {
+		this.angle = angle;
 	}
 }

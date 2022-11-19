@@ -2,6 +2,7 @@ package jp.gingarenpo.gts.sign;
 
 import jp.gingarenpo.gts.sign.data.TrafficSign;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
@@ -41,6 +42,13 @@ public class RendererTrafficSign extends TileEntitySpecialRenderer<TileEntityTra
 		// 移動準備
 		GL11.glPushMatrix();
 		GL11.glTranslated(x, y, z);
+		
+		// 回転準備
+		GL11.glTranslated(0.5, 0.5, 0.5);
+		GL11.glRotated(te.getAngle(), 0, 1, 0);
+		GL11.glTranslated(-0.5, -0.5, -0.5);
+		
+		GlStateManager.disableLighting();
 		
 		
 		// 描画を開始する

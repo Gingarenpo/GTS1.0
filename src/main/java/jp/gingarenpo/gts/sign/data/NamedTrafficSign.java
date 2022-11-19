@@ -178,67 +178,6 @@ public class NamedTrafficSign extends TrafficSign {
 		
 		if ((boolean) config.get("portrait")) {
 			// 縦の場合はwidthとheightが入れ替わる
-			b.pos(0.5 - (float)config.get("height")/2 - (float)config.get("X"), 0.5 - (float)config.get("width")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
-			b.tex(1, 0);
-			b.color(255, 255, 255, 255);
-			b.endVertex();
-			
-			b.pos(0.5 - (float)config.get("height")/2 - (float)config.get("X"), 0.5 + (float)config.get("width")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
-			b.tex(0, 0);
-			b.color(255, 255, 255, 255);
-			b.endVertex();
-			
-			b.pos(0.5 + (float)config.get("height")/2 - (float)config.get("X"), 0.5 + (float)config.get("width")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
-			b.tex(0, 1);
-			b.color(255, 255, 255, 255);
-			b.endVertex();
-			
-			b.pos(0.5 + (float)config.get("height")/2 - (float)config.get("X"), 0.5 - (float)config.get("width")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
-			b.tex(1, 1);
-			b.color(255, 255, 255, 255);
-			b.endVertex();
-			
-		}
-		else {
-			// 横の場合は普通に描画
-			b.pos(0.5 - (float)config.get("width")/2 + (float)config.get("X"), 0.5 - (float)config.get("height")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
-			b.tex(1, 1);
-			b.color(255, 255, 255, 255);
-			b.endVertex();
-			
-			b.pos(0.5 - (float)config.get("width")/2 + (float)config.get("X"), 0.5 + (float)config.get("height")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
-			b.tex(1, 0);
-			b.color(255, 255, 255, 255);
-			b.endVertex();
-			
-			b.pos(0.5 + (float)config.get("width")/2 + (float)config.get("X"), 0.5 + (float)config.get("height")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
-			b.tex(0, 0);
-			b.color(255, 255, 255, 255);
-			b.endVertex();
-			
-			b.pos(0.5 + (float)config.get("width")/2 + (float)config.get("X"), 0.5 - (float)config.get("height")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
-			b.tex(0, 1);
-			b.color(255, 255, 255, 255);
-			b.endVertex();
-			
-			
-			
-			
-		}
-		
-		
-		t.draw();
-	}
-	
-	@Override
-	public void renderBack(Tessellator t) {
-		// 厚さ0.01のものとして描画する
-		// XYZのずれを反映させる
-		BufferBuilder b = t.getBuffer(); // バッファ開始
-		b.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
-		
-		if ((boolean) config.get("portrait")) {
-			// 縦の場合はwidthとheightが入れ替わる
 			b.pos(0.5 - (float)config.get("height")/2 - (float)config.get("X"), 0.5 - (float)config.get("width")/2 + (float)config.get("Y"), 0.501 + (float)config.get("Z"));
 			b.tex(1, 1);
 			b.color(255, 255, 255, 255);
@@ -258,26 +197,93 @@ public class NamedTrafficSign extends TrafficSign {
 			b.tex(0, 1);
 			b.color(255, 255, 255, 255);
 			b.endVertex();
-		
+			
 		}
 		else {
 			// 横の場合は普通に描画
 			b.pos(0.5 - (float)config.get("width")/2 + (float)config.get("X"), 0.5 - (float)config.get("height")/2 + (float)config.get("Y"), 0.501 + (float)config.get("Z"));
-			b.tex(1, 1);
+			b.tex(0, 1);
 			b.color(255, 255, 255, 255);
 			b.endVertex();
 			
 			b.pos(0.5 + (float)config.get("width")/2 + (float)config.get("X"), 0.5 - (float)config.get("height")/2 + (float)config.get("Y"), 0.501 + (float)config.get("Z"));
-			b.tex(1, 0);
+			b.tex(1, 1);
 			b.color(255, 255, 255, 255);
 			b.endVertex();
 			
 			b.pos(0.5 + (float)config.get("width")/2 + (float)config.get("X"), 0.5 + (float)config.get("height")/2 + (float)config.get("Y"), 0.501 + (float)config.get("Z"));
-			b.tex(0, 0);
+			b.tex(1, 0);
 			b.color(255, 255, 255, 255);
 			b.endVertex();
 			
 			b.pos(0.5 - (float)config.get("width")/2 + (float)config.get("X"), 0.5 + (float)config.get("height")/2 + (float)config.get("Y"), 0.501 + (float)config.get("Z"));
+			b.tex(0, 0);
+			b.color(255, 255, 255, 255);
+			b.endVertex();
+			
+			
+			
+			
+			
+			
+		}
+		
+		
+		t.draw();
+	}
+	
+	@Override
+	public void renderBack(Tessellator t) {
+		// 厚さ0.01のものとして描画する
+		// XYZのずれを反映させる
+		BufferBuilder b = t.getBuffer(); // バッファ開始
+		b.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
+		
+		if ((boolean) config.get("portrait")) {
+			// 縦の場合はwidthとheightが入れ替わる
+			
+			
+			b.pos(0.5 - (float)config.get("height")/2 - (float)config.get("X"), 0.5 - (float)config.get("width")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
+			b.tex(1, 0);
+			b.color(255, 255, 255, 255);
+			b.endVertex();
+			
+			b.pos(0.5 - (float)config.get("height")/2 - (float)config.get("X"), 0.5 + (float)config.get("width")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
+			b.tex(0, 0);
+			b.color(255, 255, 255, 255);
+			b.endVertex();
+			
+			b.pos(0.5 + (float)config.get("height")/2 - (float)config.get("X"), 0.5 + (float)config.get("width")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
+			b.tex(0, 1);
+			b.color(255, 255, 255, 255);
+			b.endVertex();
+			
+			b.pos(0.5 + (float)config.get("height")/2 - (float)config.get("X"), 0.5 - (float)config.get("width")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
+			b.tex(1, 1);
+			b.color(255, 255, 255, 255);
+			b.endVertex();
+		
+		}
+		else {
+			// 横の場合は普通に描画
+			
+			
+			b.pos(0.5 - (float)config.get("width")/2 + (float)config.get("X"), 0.5 - (float)config.get("height")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
+			b.tex(1, 1);
+			b.color(255, 255, 255, 255);
+			b.endVertex();
+			
+			b.pos(0.5 - (float)config.get("width")/2 + (float)config.get("X"), 0.5 + (float)config.get("height")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
+			b.tex(1, 0);
+			b.color(255, 255, 255, 255);
+			b.endVertex();
+			
+			b.pos(0.5 + (float)config.get("width")/2 + (float)config.get("X"), 0.5 + (float)config.get("height")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
+			b.tex(0, 0);
+			b.color(255, 255, 255, 255);
+			b.endVertex();
+			
+			b.pos(0.5 + (float)config.get("width")/2 + (float)config.get("X"), 0.5 - (float)config.get("height")/2 + (float)config.get("Y"), 0.499 + (float)config.get("Z"));
 			b.tex(0, 1);
 			b.color(255, 255, 255, 255);
 			b.endVertex();

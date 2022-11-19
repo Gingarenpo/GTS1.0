@@ -15,11 +15,11 @@ public abstract class GTSTileEntity extends TileEntity {
 	 */
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		return TileEntity.INFINITE_EXTENT_AABB;
+		return super.getRenderBoundingBox();
 	}
 	
 	@Override
 	public double getMaxRenderDistanceSquared() {
-		return Float.POSITIVE_INFINITY;
+		return Math.pow(128, 2);
 	}
 }

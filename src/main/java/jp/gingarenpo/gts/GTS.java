@@ -346,6 +346,7 @@ public class GTS {
 			if (event.getSide().isServer()) return; // サーバー側では実行されないはずだけど
 			if (event.getHand() == EnumHand.OFF_HAND) return; // 左手は無視
 			ItemStack is = event.getItemStack(); // 持っているアイテムを取得
+			
 			if (is.getItem() == ItemBlock.getItemFromBlock(Blocks.pole)) {
 				// ポールを持った状態でクリックした
 				NBTTagCompound compound = is.getTagCompound(); // 取得
@@ -481,6 +482,8 @@ public class GTS {
 					return;
 				}
 				
+
+				
 				// データを基にGUIを開く
 				if (GTS.window != null) return; // 二重に開かない
 				EntityPlayer player = event.getEntityPlayer();
@@ -492,8 +495,20 @@ public class GTS {
 					
 					@Override
 					public void windowClosed(WindowEvent e) {
-						player.closeScreen();
+						try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+							try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+								oos.writeObject(((SwingGUITrafficSign)(GTS.window)).getData());
+							}
+							is.getTagCompound().setByteArray("gts_sign_data", baos.toByteArray());
+						}
+						catch (IOException e2) {
+							// 書き込みに失敗した場合
+							e2.printStackTrace();
+							GTS.GTSLog.warn("Warning. cannot write gts_sign_data.");
+						}
+						
 						GTS.window = null; // 元に戻す
+						player.closeScreen();
 						
 						// サーバーにパケットを送信する
 						GTS.MOD_NETWORK.sendToServer(new PacketItemStack(is.getTagCompound(), player.getName()));
